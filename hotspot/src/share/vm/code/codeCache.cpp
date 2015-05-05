@@ -964,14 +964,16 @@ void CodeCache::print() {
     int number_of_blobs = 0;
     int number_of_oop_maps = 0;
     int map_size = 0;
-    FOR_ALL_BLOBS(p) {
-      if (p->is_alive()) {
-        number_of_blobs++;
-        code_size += p->code_size();
-        OopMapSet* set = p->oop_maps();
-        if (set != NULL) {
-          number_of_oop_maps += set->size();
-          map_size           += set->heap_size();
+    FOR_ALL_HEAPS(heap) {
+      FOR_ALL_BLOBS(cb, *heap) {
+        if (cb->is_alive()) {
+          number_of_blobs++;
+          code_size += cb->code_size();
+          ImmutableOopMapSet* set = cb->oop_maps();
+          if (set != NULL) {
+            number_of_oop_maps += set->count();
+            map_size           += set->size();
+          }
         }
       }
     }
