@@ -2388,6 +2388,35 @@ void Assembler::pcmpestri(XMMRegister dst, XMMRegister src, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::pcmpeqw(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_simd_arith(0x75, dst, src, VEX_SIMD_66,
+                  false, (VM_Version::supports_avx512dq() == false));
+}
+
+void Assembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(UseAVX > 0, "some form of AVX must be enabled");
+  emit_vex_arith(0x75, dst, nds, src, VEX_SIMD_66, vector_len,
+                 false, (VM_Version::supports_avx512dq() == false));
+}
+
+void Assembler::pmovmskb(Register dst, XMMRegister src) {
+  assert(VM_Version::supports_sse2(), "");
+  int encode = simd_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66, true, VEX_OPCODE_0F,
+                                      false, AVX_128bit, (VM_Version::supports_avx512dq() == false));
+  emit_int8((unsigned char)0xD7);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::vpmovmskb(Register dst, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  int vector_len = AVX_256bit;
+  int encode = vex_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66,
+                                     vector_len, VEX_OPCODE_0F, true, false);
+  emit_int8((unsigned char)0xD7);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::pextrd(Register dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sse4_1(), "");
   int encode = simd_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, false);
@@ -2433,6 +2462,17 @@ void Assembler::pmovzxbw(XMMRegister dst, XMMRegister src) {
   int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_38);
   emit_int8(0x30);
   emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::vpmovzxbw(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  vex_prefix(src, 0, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, false, vector256);
+  emit_int8(0x30);
+  emit_operand(dst, src);
 }
 
 // generic
@@ -3931,6 +3971,196 @@ void Assembler::vpbroadcastd(XMMRegister dst, XMMRegister src) {
   bool vector256 = true;
   int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, vector256, VEX_OPCODE_0F_38);
   emit_int8(0x58);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+// duplicate 2-bytes integer data from src into 16 locations in dest
+void Assembler::vpbroadcastw(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  bool vector_len = AVX_256bit;
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66,
+                                     vector_len, VEX_OPCODE_0F_38, false);
+  emit_int8(0x79);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+// duplicate 1-byte integer data from src into 16||32|64 locations in dest : requires AVX512BW and AVX512VL
+void Assembler::evpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, vector_len, VEX_OPCODE_0F_38);
+  emit_int8(0x78);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpbroadcastb(XMMRegister dst, Address src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  _tuple_type = EVEX_T1S;
+  _input_size_in_bits = EVEX_8bit;
+  InstructionMark im(this);
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, /* vex_w */ false, vector_len);
+  emit_int8(0x78);
+  emit_operand(dst, src);
+}
+
+// duplicate 2-byte integer data from src into 8|16||32 locations in dest : requires AVX512BW and AVX512VL
+void Assembler::evpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, vector_len, VEX_OPCODE_0F_38);
+  emit_int8(0x79);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpbroadcastw(XMMRegister dst, Address src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  _tuple_type = EVEX_T1S;
+  _input_size_in_bits = EVEX_16bit;
+  InstructionMark im(this);
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, /* vex_w */ false, vector_len);
+  emit_int8(0x79);
+  emit_operand(dst, src);
+}
+
+// duplicate 4-byte integer data from src into 4|8|16 locations in dest : requires AVX512VL
+void Assembler::evpbroadcastd(XMMRegister dst, XMMRegister src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  int encode = vex_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, vector_len, VEX_OPCODE_0F_38);
+  emit_int8(0x58);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpbroadcastd(XMMRegister dst, Address src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  _tuple_type = EVEX_T1S;
+  _input_size_in_bits = EVEX_32bit;
+  InstructionMark im(this);
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, /* vex_w */ false, vector_len);
+  emit_int8(0x58);
+  emit_operand(dst, src);
+}
+
+// duplicate 8-byte integer data from src into 4|8|16 locations in dest : requires AVX512VL
+void Assembler::evpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /* vex_w */ true, vector_len, /* legacy_mode */ false, /* no_mask_reg */ false);
+  emit_int8(0x59);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpbroadcastq(XMMRegister dst, Address src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  _tuple_type = EVEX_T1S;
+  _input_size_in_bits = EVEX_64bit;
+  InstructionMark im(this);
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, /* vex_w */ true, vector_len);
+  emit_int8(0x59);
+  emit_operand(dst, src);
+}
+
+// duplicate single precision fp from src into 4|8|16 locations in dest : requires AVX512VL
+void Assembler::evpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /* vex_w */ false, vector_len, /* legacy_mode */ false, /*no_mask_reg */ false);
+  emit_int8(0x18);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpbroadcastss(XMMRegister dst, Address src, int vector_len) {
+  assert(UseAVX > 1, "");
+  _tuple_type = EVEX_T1S;
+  _input_size_in_bits = EVEX_32bit;
+  InstructionMark im(this);
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, 0, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, /* vex_w */ false, vector_len);
+  emit_int8(0x18);
+  emit_operand(dst, src);
+}
+
+// duplicate double precision fp from src into 2|4|8 locations in dest : requires AVX512VL
+void Assembler::evpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /*vex_w */ true, vector_len, /* legacy_mode */ false, /*no_mask_reg */ false);
+  emit_int8(0x19);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpbroadcastsd(XMMRegister dst, Address src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(UseAVX > 1, "");
+  _tuple_type = EVEX_T1S;
+  _input_size_in_bits = EVEX_64bit;
+  InstructionMark im(this);
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, 0, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, /* vex_w */ true, vector_len);
+  emit_int8(0x19);
+  emit_operand(dst, src);
+}
+
+// duplicate 1-byte integer data from src into 16||32|64 locations in dest : requires AVX512BW and AVX512VL
+void Assembler::evpbroadcastb(XMMRegister dst, Register src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(VM_Version::supports_evex(), "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /*vex_w */ false, vector_len, /* legacy_mode */ false, /*no_mask_reg */ false);
+  emit_int8(0x7A);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+// duplicate 2-byte integer data from src into 8|16||32 locations in dest : requires AVX512BW and AVX512VL
+void Assembler::evpbroadcastw(XMMRegister dst, Register src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(VM_Version::supports_evex(), "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /* vex_w */ false, vector_len, /* legacy_mode */ false, /*no_mask_reg */ false);
+  emit_int8(0x7B);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+// duplicate 4-byte integer data from src into 4|8|16 locations in dest : requires AVX512VL
+void Assembler::evpbroadcastd(XMMRegister dst, Register src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(VM_Version::supports_evex(), "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /* vex_w */ false, vector_len, /* legacy_mode */ false, /*no_mask_reg */ false);
+  emit_int8(0x7C);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+// duplicate 8-byte integer data from src into 4|8|16 locations in dest : requires AVX512VL
+void Assembler::evpbroadcastq(XMMRegister dst, Register src, int vector_len) {
+  _instruction_uses_vl = true;
+  assert(VM_Version::supports_evex(), "");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38,
+                                     /* vex_w */ true, vector_len, /* legacy_mode */ false, /*no_mask_reg */ false);
+  emit_int8(0x7C);
   emit_int8((unsigned char)(0xC0 | encode));
 }
 

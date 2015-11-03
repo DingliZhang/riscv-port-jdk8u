@@ -793,6 +793,12 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_subtractExactL:
     if (!UseMathExactIntrinsics || !InlineMathNatives) return true;
     break;
+  case vmIntrinsics::_getCharStringU:
+  case vmIntrinsics::_putCharStringU:
+    // Until JDK-8138651 is fixed, we have to rely on a special flag to
+    // disable these intrinsics for experiments.
+    if (!StringCharIntrinsics) return true;
+    break;
 #endif // COMPILER2
   default:
     return false;

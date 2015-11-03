@@ -2795,6 +2795,9 @@ class CommandLineFlags {
   product(bool, AggressiveOpts, false,                                      \
           "Enable aggressive optimizations - see arguments.cpp")            \
                                                                             \
+  product_pd(bool, CompactStrings,                                          \
+          "Enable Strings to use single byte chars in backing store")       \
+                                                                            \
   product_pd(uintx, TypeProfileLevel,                                       \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \
@@ -4020,6 +4023,21 @@ class CommandLineFlags {
   product(bool, EnableTracing, false,                                       \
           "Enable event-based tracing"                                      \
           "Deprecated: use FlightRecorder instead")                         \
+  diagnostic(bool, StringCharIntrinsics, true,                              \
+             "Inline String*.getChar/putChar intrinsics.")                  \
+                                                                            \
+  diagnostic(bool, CheckIntrinsics, true,                                   \
+             "When a class C is loaded, check that "                        \
+             "(1) all intrinsics defined by the VM for class C are present "\
+             "in the loaded class file and are marked with the "            \
+             "@HotSpotIntrinsicCandidate annotation, that "                 \
+             "(2) there is an intrinsic registered for all loaded methods " \
+             "that are annotated with the @HotSpotIntrinsicCandidate "      \
+             "annotation, and that "                                        \
+             "(3) no orphan methods exist for class C (i.e., methods for "  \
+             "which the VM declares an intrinsic but that are not declared "\
+             "in the loaded class C. "                                      \
+             "Check (3) is available only in debug builds.")                \
                                                                             \
   product(bool, UseLockedTracing, false,                                    \
           "Use locked-tracing when doing event-based tracing"               \

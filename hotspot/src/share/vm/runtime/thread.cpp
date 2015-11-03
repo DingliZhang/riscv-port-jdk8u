@@ -2971,12 +2971,8 @@ const char* JavaThread::get_threadgroup_name() const {
   if (thread_obj != NULL) {
     oop thread_group = java_lang_Thread::threadGroup(thread_obj);
     if (thread_group != NULL) {
-      typeArrayOop name = java_lang_ThreadGroup::name(thread_group);
       // ThreadGroup.name can be null
-      if (name != NULL) {
-        const char* str = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length());
-        return str;
-      }
+      return java_lang_ThreadGroup::name(thread_group);
     }
   }
   return NULL;
@@ -2990,12 +2986,8 @@ const char* JavaThread::get_parent_name() const {
     if (thread_group != NULL) {
       oop parent = java_lang_ThreadGroup::parent(thread_group);
       if (parent != NULL) {
-        typeArrayOop name = java_lang_ThreadGroup::name(parent);
         // ThreadGroup.name can be null
-        if (name != NULL) {
-          const char* str = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length());
-          return str;
-        }
+        return java_lang_ThreadGroup::name(parent);
       }
     }
   }
@@ -3327,6 +3319,59 @@ void Threads::threads_do(ThreadClosure* tc) {
 #endif
 
   // If CompilerThreads ever become non-JavaThreads, add them here
+}
+
+void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
+  TraceTime timer("Initialize java.lang classes", TraceStartupTime);
+
+  if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
+    create_vm_init_libraries();
+  }
+
+  initialize_class(vmSymbols::java_lang_String(), CHECK);
+
+  // Inject CompactStrings value after the static initializers for String ran.
+  java_lang_String::set_compact_strings(CompactStrings);
+
+  // Initialize java_lang.System (needed before creating the thread)
+  initialize_class(vmSymbols::java_lang_System(), CHECK);
+  // The VM creates & returns objects of this class. Make sure it's initialized.
+  initialize_class(vmSymbols::java_lang_Class(), CHECK);
+  initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK);
+  Handle thread_group = create_initial_thread_group(CHECK);
+  Universe::set_main_thread_group(thread_group());
+  initialize_class(vmSymbols::java_lang_Thread(), CHECK);
+  oop thread_object = create_initial_thread(thread_group, main_thread, CHECK);
+  main_thread->set_threadObj(thread_object);
+  // Set thread status to running since main thread has
+  // been started and running.
+  java_lang_Thread::set_thread_status(thread_object,
+                                      java_lang_Thread::RUNNABLE);
+
+  // The VM preresolves methods to these classes. Make sure that they get initialized
+  initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
+  initialize_class(vmSymbols::java_lang_ref_Finalizer(), CHECK);
+  call_initializeSystemClass(CHECK);
+
+  // get the Java runtime name after java.lang.System is initialized
+  JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
+  JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
+
+  // an instance of OutOfMemory exception has been allocated earlier
+  initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK);
+  initialize_class(vmSymbols::java_lang_NullPointerException(), CHECK);
+  initialize_class(vmSymbols::java_lang_ClassCastException(), CHECK);
+  initialize_class(vmSymbols::java_lang_ArrayStoreException(), CHECK);
+  initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK);
+  initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
+  initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
+  initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
+}
+
+void Threads::initialize_jsr292_core_classes(TRAPS) {
+  initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK);
+  initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK);
+  initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK);
 }
 
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {

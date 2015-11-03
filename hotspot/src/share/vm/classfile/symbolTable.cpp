@@ -224,7 +224,7 @@ Symbol* SymbolTable::lookup(int index, const char* name,
 // Pick hashing algorithm.
 unsigned int SymbolTable::hash_symbol(const char* s, int len) {
   return use_alternate_hashcode() ?
-           AltHashing::halfsiphash_32(seed(), (const uint8_t*)s, len) :
+           AltHashing::murmur3_32(seed(), (const jbyte*)s, len) :
            java_lang_String::hash_code((const jbyte*)s, len);
 }
 

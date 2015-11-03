@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,13 +179,14 @@ class IdealKit: public StackObj {
   Node* ConI(jint k) { return (Node*)gvn().intcon(k); }
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
 
-  Node* AddI(Node* l, Node* r) { return transform(new (C) AddINode(l, r)); }
-  Node* SubI(Node* l, Node* r) { return transform(new (C) SubINode(l, r)); }
-  Node* AndI(Node* l, Node* r) { return transform(new (C) AndINode(l, r)); }
-  Node* MaxI(Node* l, Node* r) { return transform(new (C) MaxINode(l, r)); }
-  Node* LShiftI(Node* l, Node* r) { return transform(new (C) LShiftINode(l, r)); }
-  Node* CmpI(Node* l, Node* r) { return transform(new (C) CmpINode(l, r)); }
-  Node* Bool(Node* cmp, BoolTest::mask relop) { return transform(new (C) BoolNode(cmp, relop)); }
+  Node* AddI(Node* l, Node* r) { return transform(new AddINode(l, r)); }
+  Node* SubI(Node* l, Node* r) { return transform(new SubINode(l, r)); }
+  Node* AndI(Node* l, Node* r) { return transform(new AndINode(l, r)); }
+  Node* OrI(Node* l, Node* r)  { return transform(new OrINode(l, r));  }
+  Node* MaxI(Node* l, Node* r) { return transform(new MaxINode(l, r)); }
+  Node* LShiftI(Node* l, Node* r) { return transform(new LShiftINode(l, r)); }
+  Node* CmpI(Node* l, Node* r) { return transform(new CmpINode(l, r)); }
+  Node* Bool(Node* cmp, BoolTest::mask relop) { return transform(new BoolNode(cmp, relop)); }
   void  increment(IdealVariable& v, Node* j)  { set(v, AddI(value(v), j)); }
   void  decrement(IdealVariable& v, Node* j)  { set(v, SubI(value(v), j)); }
 
@@ -257,7 +258,6 @@ class IdealKit: public StackObj {
                             Node* parm1,
                             Node* parm2,
                             Node* parm3);
-
 };
 
 #endif // SHARE_VM_OPTO_IDEALKIT_HPP

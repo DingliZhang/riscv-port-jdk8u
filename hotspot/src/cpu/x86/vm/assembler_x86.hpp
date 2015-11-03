@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1495,6 +1495,12 @@ private:
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
 
+  void pcmpeqw(XMMRegister dst, XMMRegister src);
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  void pmovmskb(Register dst, XMMRegister src);
+  void vpmovmskb(Register dst, XMMRegister src);
+
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
   void pextrq(Register dst, XMMRegister src, int imm8);
@@ -1521,6 +1527,7 @@ private:
   // Sign extend moves
   void pmovsxbw(XMMRegister dst, XMMRegister src);
   void vpmovsxbw(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpmovzxbw(XMMRegister dst, Address src);
 
 #ifndef _LP64 // no 32bit push/pop on amd64
   void popl(Address dst);
@@ -1910,6 +1917,29 @@ private:
 
   // duplicate 4-bytes integer data from src into 8 locations in dest
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
+
+  // duplicate 2-bytes integer data from src into 16 locations in dest
+  void vpbroadcastw(XMMRegister dst, XMMRegister src);
+
+  // duplicate n-bytes integer data from src into vector_len locations in dest
+  void evpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastb(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastw(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastd(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastd(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastq(XMMRegister dst, Address src, int vector_len);
+
+  void evpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastss(XMMRegister dst, Address src, int vector_len);
+  void evpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpbroadcastsd(XMMRegister dst, Address src, int vector_len);
+
+  void evpbroadcastb(XMMRegister dst, Register src, int vector_len);
+  void evpbroadcastw(XMMRegister dst, Register src, int vector_len);
+  void evpbroadcastd(XMMRegister dst, Register src, int vector_len);
+  void evpbroadcastq(XMMRegister dst, Register src, int vector_len);
 
   // Carry-Less Multiplication Quadword
   void pclmulqdq(XMMRegister dst, XMMRegister src, int mask);

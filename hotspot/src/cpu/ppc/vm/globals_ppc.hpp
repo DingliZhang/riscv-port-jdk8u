@@ -60,6 +60,9 @@ define_pd_global(uintx, CMSYoungGenPerWorker, 16*M);  // Default max size of CMS
 
 define_pd_global(uintx, TypeProfileLevel, 0);
 
+// No performance work done here yet.
+define_pd_global(bool, CompactStrings, false);
+
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)  \
                                                                             \

@@ -164,6 +164,12 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _version = _current_version;
   _alignment = alignment;
   _obj_alignment = ObjectAlignmentInBytes;
+  _compact_strings = CompactStrings;
+  _narrow_oop_mode = Universe::narrow_oop_mode();
+  _narrow_oop_shift = Universe::narrow_oop_shift();
+  _max_heap_size = MaxHeapSize;
+  _narrow_klass_base = Universe::narrow_klass_base();
+  _narrow_klass_shift = Universe::narrow_klass_shift();
   _classpath_entry_table_size = mapinfo->_classpath_entry_table_size;
   _classpath_entry_table = mapinfo->_classpath_entry_table;
   _classpath_entry_size = mapinfo->_classpath_entry_size;
@@ -692,6 +698,13 @@ bool FileMapInfo::FileMapHeader::validate() {
     FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of %d.",
                   _obj_alignment, ObjectAlignmentInBytes);
+    return false;
+  }
+  if (_compact_strings != CompactStrings) {
+    FileMapInfo::fail_continue("The shared archive file's CompactStrings setting (%s)"
+                  " does not equal the current CompactStrings setting (%s).",
+                  _compact_strings ? "enabled" : "disabled",
+                  CompactStrings   ? "enabled" : "disabled");
     return false;
   }
 
