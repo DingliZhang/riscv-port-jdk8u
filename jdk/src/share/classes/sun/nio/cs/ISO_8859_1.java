@@ -129,6 +129,10 @@ class ISO_8859_1
                 dst[dp++] = (char)(src[sp++] & 0xff);
             return dp;
         }
+
+        public boolean isASCIICompatible() {
+            return true;
+        }
     }
 
     private static class Encoder extends CharsetEncoder
@@ -260,6 +264,10 @@ class ISO_8859_1
                 }
             }
             return dp;
+        }
+
+        public boolean isASCIICompatible() {
+            return true;
         }
     }
 }

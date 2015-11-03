@@ -2683,6 +2683,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return <tt>true</tt> if the two arrays are equal
      */
+    @HotSpotIntrinsicCandidate
     public static boolean equals(byte[] a, byte[] a2) {
         if (a==a2)
             return true;

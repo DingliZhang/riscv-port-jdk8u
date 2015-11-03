@@ -409,7 +409,8 @@ public final class StringBuilder
     @Override
     public String toString() {
         // Create a copy, don't share the array
-        return new String(value, 0, count);
+        return isLatin1() ? StringLatin1.newString(value, 0, count)
+                          : StringUTF16.newStringSB(value, 0, count);
     }
 
     /**
@@ -427,7 +428,13 @@ public final class StringBuilder
         throws IOException {
         s.defaultWriteObject();
         s.writeInt(count);
-        s.writeObject(value);
+        char[] val = new char[capacity()];
+        if (isLatin1()) {
+            StringLatin1.getChars(value, 0, count, val, 0);
+        } else {
+            StringUTF16.getChars(value, 0, count, val, 0);
+        }
+        s.writeObject(val);
     }
 
     /**
@@ -437,12 +444,9 @@ public final class StringBuilder
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-        int c = s.readInt();
-        value = (char[]) s.readObject();
-        if (c < 0 || c > value.length) {
-            throw new StreamCorruptedException("count value invalid");
-        }
-        count = c;
+        count = s.readInt();
+        char[] val = (char[]) s.readObject();
+        initBytes(val, 0, val.length);
     }
 
 }
