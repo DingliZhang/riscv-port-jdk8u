@@ -1050,6 +1050,52 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
         }
 
         /**
+         * Produces a VarHandle giving access to non-static fields of type
+         * {@code T} declared by a receiver class of type {@code R}, supporting
+         * shape {@code (R : T)}.
+         * <p>
+         * Access checking is performed immediately on behalf of the lookup
+         * class.
+         * <p>
+         * Certain access modes of the returned VarHandle are unsupported under
+         * the following conditions:
+         * <ul>
+         * <li>if the field is declared {@code final}, then the write, atomic
+         *     update, and numeric atomic update access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int},
+         *     {@code long} or a reference type, then atomic update access modes
+         *     are unsupported.  (Future major platform releases of the JDK may
+         *     support additional types for certain currently unsupported access
+         *     modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long}, then
+         *     numeric atomic update access modes are unsupported.
+         * </ul>
+         * <p>
+         * If the field is declared {@code volatile} then the returned VarHandle
+         * will override access to the field (effectively ignore the
+         * {@code volatile} declaration) in accordance to it's specified
+         * access modes.
+         * @param recv the receiver class, of type {@code R}, that declares the
+         * non-static field
+         * @param name the field's name
+         * @param type the field's type, of type {@code T}
+         * @return a VarHandle giving access to non-static fields.
+         * @throws NoSuchFieldException if the field does not exist
+         * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws NullPointerException if any argument is null
+         * @since 9
+         */
+        public VarHandle findVarHandle(Class<?> recv, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            MemberName getField = resolveOrFail(REF_getField, recv, name, type);
+            MemberName putField = resolveOrFail(REF_putField, recv, name, type);
+            return getFieldVarHandle(REF_getField, REF_putField, recv, getField, putField);
+        }
+
+        /**
          * Produces a method handle giving read access to a static field.
          * The type of the method handle will have a return type of the field's
          * value type.
@@ -1095,6 +1141,54 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
         public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             MemberName field = resolveOrFail(REF_putStatic, refc, name, type);
             return getDirectField(REF_putStatic, refc, field);
+        }
+
+        /**
+         * Produces a VarHandle giving access to a static field of type
+         * {@code T} declared by a given declaring class, supporting shape
+         * {@code ((empty) : T)}.
+         * <p>
+         * Access checking is performed immediately on behalf of the lookup
+         * class.
+         * <p>
+         * If the returned VarHandle is operated on, the declaring class will be
+         * initialized, if it has not already been initialized.
+         * <p>
+         * Certain access modes of the returned VarHandle are unsupported under
+         * the following conditions:
+         * <ul>
+         * <li>if the field is declared {@code final}, then the write, atomic
+         *     update, and numeric atomic update access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int},
+         *     {@code long} or a reference type, then atomic update access modes
+         *     are unsupported.  (Future major platform releases of the JDK may
+         *     support additional types for certain currently unsupported access
+         *     modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long}, then
+         *     numeric atomic update access modes are unsupported.
+         * </ul>
+         * <p>
+         * If the field is declared {@code volatile} then the returned VarHandle
+         * will override access to the field (effectively ignore the
+         * {@code volatile} declaration) in accordance to it's specified
+         * access modes.
+         * @param decl the class that declares the static field
+         * @param name the field's name
+         * @param type the field's type, of type {@code T}
+         * @return a VarHandle giving access to a static field
+         * @throws NoSuchFieldException if the field does not exist
+         * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws NullPointerException if any argument is null
+         * @since 9
+         */
+        public VarHandle findStaticVarHandle(Class<?> decl, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            MemberName getField = resolveOrFail(REF_getStatic, decl, name, type);
+            MemberName putField = resolveOrFail(REF_putStatic, decl, name, type);
+            return getFieldVarHandle(REF_getStatic, REF_putStatic, decl, getField, putField);
         }
 
         /**
@@ -1317,6 +1411,56 @@ return mh1;
          */
         public MethodHandle unreflectSetter(Field f) throws IllegalAccessException {
             return unreflectField(f, true);
+        }
+
+        /**
+         * Produces a VarHandle that accesses fields of type {@code T} declared
+         * by a class of type {@code R}, as described by the given reflected
+         * field.
+         * If the field is non-static the VarHandle supports a shape of
+         * {@code (R : T)}, otherwise supports a shape of {@code ((empty) : T)}.
+         * <p>
+         * Access checking is performed immediately on behalf of the lookup
+         * class, regardless of the value of the field's {@code accessible}
+         * flag.
+         * <p>
+         * If the field is static, and if the returned VarHandle is operated
+         * on, the field's declaring class will be initialized, if it has not
+         * already been initialized.
+         * <p>
+         * Certain access modes of the returned VarHandle are unsupported under
+         * the following conditions:
+         * <ul>
+         * <li>if the field is declared {@code final}, then the write, atomic
+         *     update, and numeric atomic update access modes are unsupported.
+         * <li>if the field type is anything other than {@code boolean},
+         *     {@code byte}, {@code short}, {@code char}, {@code int},
+         *     {@code long} or a reference type, then atomic update access modes
+         *     are unsupported.  (Future major platform releases of the JDK may
+         *     support additional types for certain currently unsupported access
+         *     modes.)
+         * <li>if the field type is anything other than {@code byte},
+         *     {@code short}, {@code char}, {@code int} or {@code long}, then
+         *     numeric atomic update access modes are unsupported.
+         * </ul>
+         * <p>
+         * If the field is declared {@code volatile} then the returned VarHandle
+         * will override access to the field (effectively ignore the
+         * {@code volatile} declaration) in accordance to it's specified
+         * access modes.
+         * @param f the reflected field, with a field of type {@code T}, and
+         * a declaring class of type {@code R}
+         * @return a VarHandle giving access to non-static fields or a static
+         * field
+         * @throws IllegalAccessException if access checking fails
+         * @throws NullPointerException if the argument is null
+         * @since 9
+         */
+        public VarHandle unreflectVarHandle(Field f) throws IllegalAccessException {
+            MemberName getField = new MemberName(f, false);
+            MemberName putField = new MemberName(f, true);
+            return getFieldVarHandleNoSecurityManager(getField.getReferenceKind(), putField.getReferenceKind(),
+                                                      f.getDeclaringClass(), getField, putField);
         }
 
         /**
@@ -1839,6 +1983,206 @@ return mh1;
     MethodHandle arrayElementSetter(Class<?> arrayClass) throws IllegalArgumentException {
         return MethodHandleImpl.makeArrayElementAccessor(arrayClass, true);
     }
+
+    /**
+     *
+     * Produces a VarHandle giving access to elements of an array type
+     * {@code T[]}, supporting shape {@code (T[], int : T)}.
+     * <p>
+     * Certain access modes of the returned VarHandle are unsupported under
+     * the following conditions:
+     * <ul>
+     * <li>if the field type is anything other than {@code boolean},
+     *     {@code byte}, {@code short}, {@code char}, {@code int},
+     *     {@code long} or a reference type, then atomic update access modes
+     *     are unsupported.  (Future major platform releases of the JDK may
+     *     support additional types for certain currently unsupported access
+     *     modes.)
+     * <li>if the component type is anything other than {@code byte},
+     *     {@code short}, {@code char}, {@code int} or {@code long}, then
+     *     numeric atomic update access modes are unsupported.
+     * </ul>
+     * @param arrayClass the class of an array, of type {@code T[]}
+     * @return a VarHandle giving access to elements of an array
+     * @throws NullPointerException if the arrayClass is null
+     * @throws IllegalArgumentException if arrayClass is not an array type
+     * @since 9
+     */
+    public static
+    VarHandle arrayElementVarHandle(Class<?> arrayClass) throws IllegalArgumentException {
+        return VarHandles.makeArrayElementHandle(arrayClass);
+    }
+
+    /**
+     * Produces a VarHandle giving access to elements of a {@code byte[]} array
+     * viewed as if it were a different primitive array type, such as
+     * {@code int[]} or {@code long[]}.  The shape of the resulting VarHandle is
+     * {@code (byte[], int : T)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index in a {@code byte[]} array,
+     * and {@code T} is the component type of the given view array class.  The
+     * returned VarHandle accesses bytes at an index in a {@code byte[]} array,
+     * composing bytes to or from a value of {@code T} according to the given
+     * endianness.
+     * <p>
+     * The supported component types (variables types) are {@code short},
+     * {@code char}, {@code int}, {@code long}, {@code float} and
+     * {@code double}.
+     * <p>
+     * Access of bytes at a given index will result in an
+     * {@code IndexOutOfBoundsException} if the index is less than {@code 0}
+     * or greater than the {@code byte[]} array length minus the size (in bytes)
+     * of {@code T}.
+     * <p>
+     * Access of bytes at an index may be aligned or misaligned for {@code T},
+     * with respect to the underlying memory address, {@code A} say, associated
+     * with the array and index.
+     * If access is misaligned then access for anything other than the
+     * {@code get} and {@code set} access modes will result in an
+     * {@code IllegalStateException}.  In such cases atomic access is only
+     * guaranteed with respect to the largest power of two that divides the GCD
+     * of {@code A} and the size (in bytes) of {@code T}.
+     * If access is aligned then following access modes are supported and are
+     * guaranteed to support atomic access:
+     * <ul>
+     * <li>read write access modes for all {@code T};
+     * <li>atomic update access modes for {@code int}, {@code long},
+     *     {@code float} or {@code double}.
+     *     (Future major platform releases of the JDK may support additional
+     *     types for certain currently unsupported access modes.)
+     * <li>numeric atomic update access modes for {@code int} and {@code long}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * </ul>
+     * <p>
+     * Misaligned access, and therefore atomicity guarantees, may be determined
+     * for {@code byte[]} arrays without operating on a specific array.  Given
+     * an {@code index}, {@code T} and it's corresponding boxed type,
+     * {@code T_BOX}, misalignment may be determined as follows:
+     * <pre>{@code
+     * int sizeOfT = T_BOX.BYTES;  // size in bytes of T
+     * int misalignedAtZeroIndex = ByteBuffer.wrap(new byte[0]).
+     *     alignmentOffset(0, sizeOfT);
+     * int misalignedAtIndex = (misalignedAtZeroIndex + index) % sizeOfT;
+     * boolean isMisaligned = misalignedAtIndex != 0;
+     * }</pre>
+     *
+     * @implNote
+     * The variable types {@code float} and {@code double} are supported as if
+     * by transformation to and access with the variable types {@code int} and
+     * {@code long} respectively.  For example, the transformation of a
+     * {@code double} value to a long value is performed as if using
+     * {@link Double#doubleToRawLongBits(double)}, and the reverse
+     * transformation is performed as if using
+     * {@link Double#longBitsToDouble(long)}.
+     *
+     * @param viewArrayClass the view array class, with a component type of
+     * type {@code T}
+     * @param byteOrder the endianness of the view array elements, as
+     * stored in the underlying {@code byte} array
+     * @return a VarHandle giving access to elements of a {@code byte[]} array
+     * viewed as if elements corresponding to the components type of the view
+     * array class
+     * @throws NullPointerException if viewArrayClass or byteOrder is null
+     * @throws IllegalArgumentException if viewArrayClass is not an array type
+     * @throws UnsupportedOperationException if the component type of
+     * viewArrayClass is not supported as a variable type
+     * @since 9
+     */
+    public static
+    VarHandle byteArrayViewVarHandle(Class<?> viewArrayClass,
+                                     ByteOrder byteOrder) throws IllegalArgumentException {
+        Objects.requireNonNull(byteOrder);
+        return VarHandles.byteArrayViewHandle(viewArrayClass,
+                                              byteOrder == ByteOrder.BIG_ENDIAN);
+    }
+
+    /**
+     * Produces a VarHandle giving access to elements of a {@code ByteBuffer}
+     * viewed as if it were an array of elements of a different primitive
+     * component type to that of {@code byte}, such as {@code int[]} or
+     * {@code long[]}.  The shape of the resulting VarHandle is
+     * {@code (ByteBuffer, int : T)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index in a {@code ByteBuffer}, and
+     * {@code T} is the component type of the given view array class.  The
+     * returned VarHandle accesses bytes at an index in a {@code ByteBuffer},
+     * composing bytes to or from a value of {@code T} according to the given
+     * endianness.
+     * <p>
+     * The supported component types (variables types) are {@code short},
+     * {@code char}, {@code int}, {@code long}, {@code float} and
+     * {@code double}.
+     * <p>
+     * Access will result in a {@code ReadOnlyBufferException} for anything
+     * other than the read access modes if the {@code ByteBuffer} is read-only.
+     * <p>
+     * Access of bytes at a given index will result in an
+     * {@code IndexOutOfBoundsException} if the index is less than {@code 0}
+     * or greater than the {@code ByteBuffer} limit minus the size (in bytes) of
+     * {@code T}.
+     * <p>
+     * Access of bytes at an index may be aligned or misaligned for {@code T},
+     * with respect to the underlying memory address, {@code A} say, associated
+     * with the {@code ByteBuffer} and index.
+     * If access is misaligned then access for anything other than the
+     * {@code get} and {@code set} access modes will result in an
+     * {@code IllegalStateException}.  In such cases atomic access is only
+     * guaranteed with respect to the largest power of two that divides the GCD
+     * of {@code A} and the size (in bytes) of {@code T}.
+     * If access is aligned then following access modes are supported and are
+     * guaranteed to support atomic access:
+     * <ul>
+     * <li>read write access modes for all {@code T};
+     * <li>atomic update access modes for {@code int}, {@code long},
+     *     {@code float} or {@code double}.
+     *     (Future major platform releases of the JDK may support additional
+     *     types for certain currently unsupported access modes.)
+     * <li>numeric atomic update access modes for {@code int} and {@code long}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * </ul>
+     * <p>
+     * Misaligned access, and therefore atomicity guarantees, may be determined
+     * for a {@code ByteBuffer}, {@code bb} (direct or otherwise), an
+     * {@code index}, {@code T} and it's corresponding boxed type,
+     * {@code T_BOX}, as follows:
+     * <pre>{@code
+     * int sizeOfT = T_BOX.BYTES;  // size in bytes of T
+     * ByteBuffer bb = ...
+     * int misalignedAtIndex = bb.alignmentOffset(index, sizeOfT);
+     * boolean isMisaligned = misalignedAtIndex != 0;
+     * }</pre>
+     *
+     * @implNote
+     * The variable types {@code float} and {@code double} are supported as if
+     * by transformation to and access with the variable types {@code int} and
+     * {@code long} respectively.  For example, the transformation of a
+     * {@code double} value to a long value is performed as if using
+     * {@link Double#doubleToRawLongBits(double)}, and the reverse
+     * transformation is performed as if using
+     * {@link Double#longBitsToDouble(long)}.
+     *
+     * @param viewArrayClass the view array class, with a component type of
+     * type {@code T}
+     * @param byteOrder the endianness of the view array elements, as
+     * stored in the underlying {@code ByteBuffer} (Note this overrides the
+     * endianness of a {@code ByteBuffer})
+     * @return a VarHandle giving access to elements of a {@code ByteBuffer}
+     * viewed as if elements corresponding to the components type of the view
+     * array class
+     * @throws NullPointerException if viewArrayClass or byteOrder is null
+     * @throws IllegalArgumentException if viewArrayClass is not an array type
+     * @throws UnsupportedOperationException if the component type of
+     * viewArrayClass is not supported as a variable type
+     * @since 9
+     */
+    public static
+    VarHandle byteBufferViewVarHandle(Class<?> viewArrayClass,
+                                      ByteOrder byteOrder) throws IllegalArgumentException {
+        Objects.requireNonNull(byteOrder);
+        return VarHandles.makeByteBufferViewHandle(viewArrayClass,
+                                                   byteOrder == ByteOrder.BIG_ENDIAN);
+    }
+
 
     /// method handle invocation (reflective style)
 
