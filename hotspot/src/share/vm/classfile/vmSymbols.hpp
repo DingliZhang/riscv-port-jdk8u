@@ -1063,19 +1063,138 @@
   /* prefetch_signature is shared by all prefetch variants */                                                           \
   do_signature( prefetch_signature,        "(Ljava/lang/Object;J)V")                                                    \
                                                                                                                         \
-  do_intrinsic(_prefetchRead,             sun_misc_Unsafe,        prefetchRead_name, prefetch_signature,         F_RN)  \
-   do_name(     prefetchRead_name,                               "prefetchRead")                                        \
-  do_intrinsic(_prefetchWrite,            sun_misc_Unsafe,        prefetchWrite_name, prefetch_signature,        F_RN)  \
-   do_name(     prefetchWrite_name,                              "prefetchWrite")                                       \
-  do_intrinsic(_prefetchReadStatic,       sun_misc_Unsafe,        prefetchReadStatic_name, prefetch_signature,   F_SN)  \
-   do_name(     prefetchReadStatic_name,                         "prefetchReadStatic")                                  \
-  do_intrinsic(_prefetchWriteStatic,      sun_misc_Unsafe,        prefetchWriteStatic_name, prefetch_signature,  F_SN)  \
-   do_name(     prefetchWriteStatic_name,                        "prefetchWriteStatic")                                 \
-    /*== LAST_COMPILER_INLINE*/                                                                                         \
-    /*the compiler does have special inlining code for these; bytecode inline is just fine */                           \
+  do_signature(compareAndSwapObject_signature,     "(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z")        \
+  do_signature(compareAndExchangeObject_signature, "(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
+  do_signature(compareAndSwapLong_signature,       "(Ljava/lang/Object;JJJ)Z")                                          \
+  do_signature(compareAndExchangeLong_signature,   "(Ljava/lang/Object;JJJ)J")                                          \
+  do_signature(compareAndSwapInt_signature,        "(Ljava/lang/Object;JII)Z")                                          \
+  do_signature(compareAndExchangeInt_signature,    "(Ljava/lang/Object;JII)I")                                          \
+  do_signature(compareAndSwapByte_signature,       "(Ljava/lang/Object;JBB)Z")                                          \
+  do_signature(compareAndExchangeByte_signature,   "(Ljava/lang/Object;JBB)B")                                          \
+  do_signature(compareAndSwapShort_signature,      "(Ljava/lang/Object;JSS)Z")                                          \
+  do_signature(compareAndExchangeShort_signature,  "(Ljava/lang/Object;JSS)S")                                          \
                                                                                                                         \
-  do_intrinsic(_fillInStackTrace,         java_lang_Throwable, fillInStackTrace_name, void_throwable_signature,  F_RNY) \
-                                                                                                                          \
+  do_name(compareAndSwapObject_name,             "compareAndSwapObject")                                                \
+  do_name(compareAndExchangeObjectVolatile_name, "compareAndExchangeObjectVolatile")                                    \
+  do_name(compareAndExchangeObjectAcquire_name,  "compareAndExchangeObjectAcquire")                                     \
+  do_name(compareAndExchangeObjectRelease_name,  "compareAndExchangeObjectRelease")                                     \
+  do_name(compareAndSwapLong_name,               "compareAndSwapLong")                                                  \
+  do_name(compareAndExchangeLongVolatile_name,   "compareAndExchangeLongVolatile")                                      \
+  do_name(compareAndExchangeLongAcquire_name,    "compareAndExchangeLongAcquire")                                       \
+  do_name(compareAndExchangeLongRelease_name,    "compareAndExchangeLongRelease")                                       \
+  do_name(compareAndSwapInt_name,                "compareAndSwapInt")                                                   \
+  do_name(compareAndExchangeIntVolatile_name,    "compareAndExchangeIntVolatile")                                       \
+  do_name(compareAndExchangeIntAcquire_name,     "compareAndExchangeIntAcquire")                                        \
+  do_name(compareAndExchangeIntRelease_name,     "compareAndExchangeIntRelease")                                        \
+  do_name(compareAndSwapByte_name,               "compareAndSwapByte")                                                  \
+  do_name(compareAndExchangeByteVolatile_name,   "compareAndExchangeByteVolatile")                                      \
+  do_name(compareAndExchangeByteAcquire_name,    "compareAndExchangeByteAcquire")                                       \
+  do_name(compareAndExchangeByteRelease_name,    "compareAndExchangeByteRelease")                                       \
+  do_name(compareAndSwapShort_name,              "compareAndSwapShort")                                                 \
+  do_name(compareAndExchangeShortVolatile_name,  "compareAndExchangeShortVolatile")                                     \
+  do_name(compareAndExchangeShortAcquire_name,   "compareAndExchangeShortAcquire")                                      \
+  do_name(compareAndExchangeShortRelease_name,   "compareAndExchangeShortRelease")                                      \
+                                                                                                                        \
+  do_name(weakCompareAndSwapObject_name,         "weakCompareAndSwapObject")                                            \
+  do_name(weakCompareAndSwapObjectAcquire_name,  "weakCompareAndSwapObjectAcquire")                                     \
+  do_name(weakCompareAndSwapObjectRelease_name,  "weakCompareAndSwapObjectRelease")                                     \
+  do_name(weakCompareAndSwapObjectVolatile_name, "weakCompareAndSwapObjectVolatile")                                    \
+  do_name(weakCompareAndSwapLong_name,           "weakCompareAndSwapLong")                                              \
+  do_name(weakCompareAndSwapLongAcquire_name,    "weakCompareAndSwapLongAcquire")                                       \
+  do_name(weakCompareAndSwapLongRelease_name,    "weakCompareAndSwapLongRelease")                                       \
+  do_name(weakCompareAndSwapLongVolatile_name,   "weakCompareAndSwapLongVolatile")                                      \
+  do_name(weakCompareAndSwapInt_name,            "weakCompareAndSwapInt")                                               \
+  do_name(weakCompareAndSwapIntAcquire_name,     "weakCompareAndSwapIntAcquire")                                        \
+  do_name(weakCompareAndSwapIntRelease_name,     "weakCompareAndSwapIntRelease")                                        \
+  do_name(weakCompareAndSwapIntVolatile_name,    "weakCompareAndSwapIntVolatile")                                       \
+  do_name(weakCompareAndSwapByte_name,           "weakCompareAndSwapByte")                                              \
+  do_name(weakCompareAndSwapByteAcquire_name,    "weakCompareAndSwapByteAcquire")                                       \
+  do_name(weakCompareAndSwapByteRelease_name,    "weakCompareAndSwapByteRelease")                                       \
+  do_name(weakCompareAndSwapByteVolatile_name,   "weakCompareAndSwapByteVolatile")                                      \
+  do_name(weakCompareAndSwapShort_name,          "weakCompareAndSwapShort")                                             \
+  do_name(weakCompareAndSwapShortAcquire_name,   "weakCompareAndSwapShortAcquire")                                      \
+  do_name(weakCompareAndSwapShortRelease_name,   "weakCompareAndSwapShortRelease")                                      \
+  do_name(weakCompareAndSwapShortVolatile_name,  "weakCompareAndSwapShortVolatile")                                     \
+                                                                                                                        \
+  do_intrinsic(_compareAndSwapObject,             jdk_internal_misc_Unsafe,  compareAndSwapObject_name,             compareAndSwapObject_signature,     F_RN) \
+  do_intrinsic(_compareAndExchangeObjectVolatile, jdk_internal_misc_Unsafe,  compareAndExchangeObjectVolatile_name, compareAndExchangeObject_signature, F_RN) \
+  do_intrinsic(_compareAndExchangeObjectAcquire,  jdk_internal_misc_Unsafe,  compareAndExchangeObjectAcquire_name,  compareAndExchangeObject_signature, F_R)  \
+  do_intrinsic(_compareAndExchangeObjectRelease,  jdk_internal_misc_Unsafe,  compareAndExchangeObjectRelease_name,  compareAndExchangeObject_signature, F_R)  \
+  do_intrinsic(_compareAndSwapLong,               jdk_internal_misc_Unsafe,  compareAndSwapLong_name,               compareAndSwapLong_signature,       F_RN) \
+  do_intrinsic(_compareAndExchangeLongVolatile,   jdk_internal_misc_Unsafe,  compareAndExchangeLongVolatile_name,   compareAndExchangeLong_signature,   F_RN) \
+  do_intrinsic(_compareAndExchangeLongAcquire,    jdk_internal_misc_Unsafe,  compareAndExchangeLongAcquire_name,    compareAndExchangeLong_signature,   F_R)  \
+  do_intrinsic(_compareAndExchangeLongRelease,    jdk_internal_misc_Unsafe,  compareAndExchangeLongRelease_name,    compareAndExchangeLong_signature,   F_R)  \
+  do_intrinsic(_compareAndSwapInt,                jdk_internal_misc_Unsafe,  compareAndSwapInt_name,                compareAndSwapInt_signature,        F_RN) \
+  do_intrinsic(_compareAndExchangeIntVolatile,    jdk_internal_misc_Unsafe,  compareAndExchangeIntVolatile_name,    compareAndExchangeInt_signature,    F_RN) \
+  do_intrinsic(_compareAndExchangeIntAcquire,     jdk_internal_misc_Unsafe,  compareAndExchangeIntAcquire_name,     compareAndExchangeInt_signature,    F_R)  \
+  do_intrinsic(_compareAndExchangeIntRelease,     jdk_internal_misc_Unsafe,  compareAndExchangeIntRelease_name,     compareAndExchangeInt_signature,    F_R)  \
+  do_intrinsic(_compareAndSwapByte,               jdk_internal_misc_Unsafe,  compareAndSwapByte_name,               compareAndSwapByte_signature,       F_R)  \
+  do_intrinsic(_compareAndExchangeByteVolatile,   jdk_internal_misc_Unsafe,  compareAndExchangeByteVolatile_name,   compareAndExchangeByte_signature,   F_R)  \
+  do_intrinsic(_compareAndExchangeByteAcquire,    jdk_internal_misc_Unsafe,  compareAndExchangeByteAcquire_name,    compareAndExchangeByte_signature,   F_R)  \
+  do_intrinsic(_compareAndExchangeByteRelease,    jdk_internal_misc_Unsafe,  compareAndExchangeByteRelease_name,    compareAndExchangeByte_signature,   F_R)  \
+  do_intrinsic(_compareAndSwapShort,              jdk_internal_misc_Unsafe,  compareAndSwapShort_name,              compareAndSwapShort_signature,      F_R)  \
+  do_intrinsic(_compareAndExchangeShortVolatile,  jdk_internal_misc_Unsafe,  compareAndExchangeShortVolatile_name,  compareAndExchangeShort_signature,  F_R)  \
+  do_intrinsic(_compareAndExchangeShortAcquire,   jdk_internal_misc_Unsafe,  compareAndExchangeShortAcquire_name,   compareAndExchangeShort_signature,  F_R)  \
+  do_intrinsic(_compareAndExchangeShortRelease,   jdk_internal_misc_Unsafe,  compareAndExchangeShortRelease_name,   compareAndExchangeShort_signature,  F_R)  \
+                                                                                                                                                             \
+  do_intrinsic(_weakCompareAndSwapObject,         jdk_internal_misc_Unsafe,  weakCompareAndSwapObject_name,         compareAndSwapObject_signature,     F_R) \
+  do_intrinsic(_weakCompareAndSwapObjectAcquire,  jdk_internal_misc_Unsafe,  weakCompareAndSwapObjectAcquire_name,  compareAndSwapObject_signature,     F_R) \
+  do_intrinsic(_weakCompareAndSwapObjectRelease,  jdk_internal_misc_Unsafe,  weakCompareAndSwapObjectRelease_name,  compareAndSwapObject_signature,     F_R) \
+  do_intrinsic(_weakCompareAndSwapObjectVolatile, jdk_internal_misc_Unsafe,  weakCompareAndSwapObjectVolatile_name, compareAndSwapObject_signature,     F_R) \
+  do_intrinsic(_weakCompareAndSwapLong,           jdk_internal_misc_Unsafe,  weakCompareAndSwapLong_name,           compareAndSwapLong_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapLongAcquire,    jdk_internal_misc_Unsafe,  weakCompareAndSwapLongAcquire_name,    compareAndSwapLong_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapLongRelease,    jdk_internal_misc_Unsafe,  weakCompareAndSwapLongRelease_name,    compareAndSwapLong_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapLongVolatile,   jdk_internal_misc_Unsafe,  weakCompareAndSwapLongVolatile_name,   compareAndSwapLong_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapInt,            jdk_internal_misc_Unsafe,  weakCompareAndSwapInt_name,            compareAndSwapInt_signature,        F_R) \
+  do_intrinsic(_weakCompareAndSwapIntAcquire,     jdk_internal_misc_Unsafe,  weakCompareAndSwapIntAcquire_name,     compareAndSwapInt_signature,        F_R) \
+  do_intrinsic(_weakCompareAndSwapIntRelease,     jdk_internal_misc_Unsafe,  weakCompareAndSwapIntRelease_name,     compareAndSwapInt_signature,        F_R) \
+  do_intrinsic(_weakCompareAndSwapIntVolatile,    jdk_internal_misc_Unsafe,  weakCompareAndSwapIntVolatile_name,    compareAndSwapInt_signature,        F_R) \
+  do_intrinsic(_weakCompareAndSwapByte,           jdk_internal_misc_Unsafe,  weakCompareAndSwapByte_name,           compareAndSwapByte_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapByteAcquire,    jdk_internal_misc_Unsafe,  weakCompareAndSwapByteAcquire_name,    compareAndSwapByte_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapByteRelease,    jdk_internal_misc_Unsafe,  weakCompareAndSwapByteRelease_name,    compareAndSwapByte_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapByteVolatile,   jdk_internal_misc_Unsafe,  weakCompareAndSwapByteVolatile_name,   compareAndSwapByte_signature,       F_R) \
+  do_intrinsic(_weakCompareAndSwapShort,          jdk_internal_misc_Unsafe,  weakCompareAndSwapShort_name,          compareAndSwapShort_signature,      F_R) \
+  do_intrinsic(_weakCompareAndSwapShortAcquire,   jdk_internal_misc_Unsafe,  weakCompareAndSwapShortAcquire_name,   compareAndSwapShort_signature,      F_R) \
+  do_intrinsic(_weakCompareAndSwapShortRelease,   jdk_internal_misc_Unsafe,  weakCompareAndSwapShortRelease_name,   compareAndSwapShort_signature,      F_R) \
+  do_intrinsic(_weakCompareAndSwapShortVolatile,  jdk_internal_misc_Unsafe,  weakCompareAndSwapShortVolatile_name,  compareAndSwapShort_signature,      F_R) \
+                           \
+  do_intrinsic(_getAndAddInt,             jdk_internal_misc_Unsafe,     getAndAddInt_name, getAndAddInt_signature, F_R)       \
+   do_name(     getAndAddInt_name,                                      "getAndAddInt")                                       \
+   do_signature(getAndAddInt_signature,                                 "(Ljava/lang/Object;JI)I" )                           \
+  do_intrinsic(_getAndAddLong,            jdk_internal_misc_Unsafe,     getAndAddLong_name, getAndAddLong_signature, F_R)     \
+   do_name(     getAndAddLong_name,                                     "getAndAddLong")                                      \
+   do_signature(getAndAddLong_signature,                                "(Ljava/lang/Object;JJ)J" )                           \
+  do_intrinsic(_getAndAddByte,            jdk_internal_misc_Unsafe,     getAndAddByte_name, getAndAddByte_signature, F_R)     \
+   do_name(     getAndAddByte_name,                                     "getAndAddByte")                                      \
+   do_signature(getAndAddByte_signature,                                "(Ljava/lang/Object;JB)B" )                           \
+  do_intrinsic(_getAndAddShort,           jdk_internal_misc_Unsafe,     getAndAddShort_name, getAndAddShort_signature, F_R)   \
+   do_name(     getAndAddShort_name,                                    "getAndAddShort")                                     \
+   do_signature(getAndAddShort_signature,                               "(Ljava/lang/Object;JS)S" )                           \
+  do_intrinsic(_getAndSetInt,             jdk_internal_misc_Unsafe,     getAndSetInt_name, getAndSetInt_signature, F_R)       \
+   do_name(     getAndSetInt_name,                                      "getAndSetInt")                                       \
+   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
+  do_intrinsic(_getAndSetLong,            jdk_internal_misc_Unsafe,     getAndSetLong_name, getAndSetLong_signature, F_R)     \
+   do_name(     getAndSetLong_name,                                     "getAndSetLong")                                      \
+   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
+  do_intrinsic(_getAndSetByte,            jdk_internal_misc_Unsafe,     getAndSetByte_name, getAndSetByte_signature, F_R)     \
+   do_name(     getAndSetByte_name,                                     "getAndSetByte")                                      \
+   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)  \
+  do_intrinsic(_getAndSetShort,           jdk_internal_misc_Unsafe,     getAndSetShort_name, getAndSetShort_signature, F_R)   \
+   do_name(     getAndSetShort_name,                                    "getAndSetShort")                                     \
+   do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature) \
+  do_intrinsic(_getAndSetObject,          jdk_internal_misc_Unsafe,     getAndSetObject_name, getAndSetObject_signature,  F_R)\
+   do_name(     getAndSetObject_name,                                   "getAndSetObject")                                    \
+   do_signature(getAndSetObject_signature,                              "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                                               \
+   /* (2) Bytecode intrinsics                                                                        */                        \
+                                                                                                                               \
+  do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_R)    \
+   do_name(     park_name,                                              "park")                                                \
+   do_signature(park_signature,                                         "(ZJ)V")                                               \
+  do_intrinsic(_unpark,                   jdk_internal_misc_Unsafe,     unpark_name, unpark_signature,                 F_R)    \
+   do_name(     unpark_name,                                            "unpark")                                              \
+   do_alias(    unpark_signature,                                       /*(LObject;)V*/ object_void_signature)                 \
+                                                                                                                               \
   do_intrinsic(_StringBuilder_void,   java_lang_StringBuilder, object_initializer_name, void_method_signature,     F_R)   \
   do_intrinsic(_StringBuilder_int,    java_lang_StringBuilder, object_initializer_name, int_void_signature,        F_R)   \
   do_intrinsic(_StringBuilder_String, java_lang_StringBuilder, object_initializer_name, string_void_signature,     F_R)   \
