@@ -254,6 +254,20 @@ void VM_Version::get_processor_features() {
     UseCRC32Intrinsics = true;
   }
 
+  if (auxv & HWCAP_CRC32) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  } else if (UseCRC32CIntrinsics) {
+    warning("CRC32C is not available on the CPU");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  }
+
+  if (UseFMA) {
+    warning("FMA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
   if (auxv & (HWCAP_SHA1 | HWCAP_SHA2)) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);

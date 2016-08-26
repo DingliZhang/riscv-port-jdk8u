@@ -71,7 +71,8 @@ public:
                         : 1,
                ssse3    : 1,
                cid      : 1,
-                        : 2,
+                        : 1,
+               fma      : 1,
                cmpxchg16: 1,
                         : 4,
                dca      : 1,
@@ -266,7 +267,12 @@ protected:
     CPU_ADX    = (1 << 25)
   } cpuFeatureFlags;
 
-  enum {
+#define CPU_AVX512BW ((uint64_t)UCONST64(0x100000000)) // enums are limited to 31 bit
+#define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
+#define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
+#define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
+
+  enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
     // Intel
@@ -474,6 +480,8 @@ protected:
         result |= CPU_BMI2;
       if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
         result |= CPU_LZCNT;
+      if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
+        result |= CPU_FMA;
       // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
       if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
         result |= CPU_3DNOW_PREFETCH;
@@ -614,29 +622,43 @@ public:
   //
   // Feature identification
   //
-  static bool supports_cpuid()    { return _cpuFeatures  != 0; }
-  static bool supports_cmpxchg8() { return (_cpuFeatures & CPU_CX8) != 0; }
-  static bool supports_cmov()     { return (_cpuFeatures & CPU_CMOV) != 0; }
-  static bool supports_fxsr()     { return (_cpuFeatures & CPU_FXSR) != 0; }
-  static bool supports_ht()       { return (_cpuFeatures & CPU_HT) != 0; }
-  static bool supports_mmx()      { return (_cpuFeatures & CPU_MMX) != 0; }
-  static bool supports_sse()      { return (_cpuFeatures & CPU_SSE) != 0; }
-  static bool supports_sse2()     { return (_cpuFeatures & CPU_SSE2) != 0; }
-  static bool supports_sse3()     { return (_cpuFeatures & CPU_SSE3) != 0; }
-  static bool supports_ssse3()    { return (_cpuFeatures & CPU_SSSE3)!= 0; }
-  static bool supports_sse4_1()   { return (_cpuFeatures & CPU_SSE4_1) != 0; }
-  static bool supports_sse4_2()   { return (_cpuFeatures & CPU_SSE4_2) != 0; }
-  static bool supports_popcnt()   { return (_cpuFeatures & CPU_POPCNT) != 0; }
-  static bool supports_avx()      { return (_cpuFeatures & CPU_AVX) != 0; }
-  static bool supports_avx2()     { return (_cpuFeatures & CPU_AVX2) != 0; }
-  static bool supports_tsc()      { return (_cpuFeatures & CPU_TSC)    != 0; }
-  static bool supports_aes()      { return (_cpuFeatures & CPU_AES) != 0; }
-  static bool supports_erms()     { return (_cpuFeatures & CPU_ERMS) != 0; }
-  static bool supports_clmul()    { return (_cpuFeatures & CPU_CLMUL) != 0; }
-  static bool supports_rtm()      { return (_cpuFeatures & CPU_RTM) != 0; }
-  static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
-  static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
-  static bool supports_adx()     { return (_cpuFeatures & CPU_ADX) != 0; }
+  static bool supports_cpuid()    { return _features  != 0; }
+  static bool supports_cmpxchg8() { return (_features & CPU_CX8) != 0; }
+  static bool supports_cmov()     { return (_features & CPU_CMOV) != 0; }
+  static bool supports_fxsr()     { return (_features & CPU_FXSR) != 0; }
+  static bool supports_ht()       { return (_features & CPU_HT) != 0; }
+  static bool supports_mmx()      { return (_features & CPU_MMX) != 0; }
+  static bool supports_sse()      { return (_features & CPU_SSE) != 0; }
+  static bool supports_sse2()     { return (_features & CPU_SSE2) != 0; }
+  static bool supports_sse3()     { return (_features & CPU_SSE3) != 0; }
+  static bool supports_ssse3()    { return (_features & CPU_SSSE3)!= 0; }
+  static bool supports_sse4_1()   { return (_features & CPU_SSE4_1) != 0; }
+  static bool supports_sse4_2()   { return (_features & CPU_SSE4_2) != 0; }
+  static bool supports_popcnt()   { return (_features & CPU_POPCNT) != 0; }
+  static bool supports_avx()      { return (_features & CPU_AVX) != 0; }
+  static bool supports_avx2()     { return (_features & CPU_AVX2) != 0; }
+  static bool supports_tsc()      { return (_features & CPU_TSC)    != 0; }
+  static bool supports_aes()      { return (_features & CPU_AES) != 0; }
+  static bool supports_erms()     { return (_features & CPU_ERMS) != 0; }
+  static bool supports_clmul()    { return (_features & CPU_CLMUL) != 0; }
+  static bool supports_rtm()      { return (_features & CPU_RTM) != 0; }
+  static bool supports_bmi1()     { return (_features & CPU_BMI1) != 0; }
+  static bool supports_bmi2()     { return (_features & CPU_BMI2) != 0; }
+  static bool supports_adx()      { return (_features & CPU_ADX) != 0; }
+  static bool supports_evex()     { return (_features & CPU_AVX512F) != 0; }
+  static bool supports_avx512dq() { return (_features & CPU_AVX512DQ) != 0; }
+  static bool supports_avx512pf() { return (_features & CPU_AVX512PF) != 0; }
+  static bool supports_avx512er() { return (_features & CPU_AVX512ER) != 0; }
+  static bool supports_avx512cd() { return (_features & CPU_AVX512CD) != 0; }
+  static bool supports_avx512bw() { return (_features & CPU_AVX512BW) != 0; }
+  static bool supports_avx512vl() { return (_features & CPU_AVX512VL) != 0; }
+  static bool supports_avx512vlbw() { return (supports_avx512bw() && supports_avx512vl()); }
+  static bool supports_avx512novl() { return (supports_evex() && !supports_avx512vl()); }
+  static bool supports_avx512nobw() { return (supports_evex() && !supports_avx512bw()); }
+  static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
+  static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
+  static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
+  static bool supports_fma()        { return (_features & CPU_FMA) != 0; }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

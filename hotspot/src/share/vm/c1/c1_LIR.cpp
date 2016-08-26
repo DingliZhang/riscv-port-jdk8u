@@ -790,7 +790,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 // LIR_Op3
     case lir_idiv:
-    case lir_irem: {
+    case lir_irem:
+    case lir_fmad:
+    case lir_fmaf: {
       assert(op->as_Op3() != NULL, "must be");
       LIR_Op3* op3= (LIR_Op3*)op;
 

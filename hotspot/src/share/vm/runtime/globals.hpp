@@ -615,6 +615,9 @@ class CommandLineFlags {
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions can be used on x86/x64")        \
                                                                             \
+  product(bool, UseFMA, false,                                              \
+          "Control whether FMA instructions can be used")                   \
+                                                                            \
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions can be used on SPARC")          \
                                                                             \

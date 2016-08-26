@@ -485,7 +485,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -515,8 +515,11 @@ void VM_Version::get_processor_features() {
                (supports_tscinv() ? ", tscinv": ""),
                (supports_bmi1() ? ", bmi1" : ""),
                (supports_bmi2() ? ", bmi2" : ""),
-               (supports_adx() ? ", adx" : ""));
-  _features_str = strdup(buf);
+               (supports_adx() ? ", adx" : ""),
+               (supports_evex() ? ", evex" : ""),
+               (supports_sha() ? ", sha" : ""),
+               (supports_fma() ? ", fma" : ""));
+  _features_string = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
@@ -606,7 +609,20 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (UseSHA) {
+  if (supports_fma() && UseSSE >= 2) {
+    if (FLAG_IS_DEFAULT(UseFMA)) {
+      UseFMA = true;
+    }
+  } else if (UseFMA) {
+    warning("FMA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
+  if (supports_sha() LP64_ONLY(|| supports_avx2() && supports_bmi2())) {
+    if (FLAG_IS_DEFAULT(UseSHA)) {
+      UseSHA = true;
+    }
+  } else if (UseSHA) {
     warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
   }
@@ -617,7 +633,15 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  // Adjust RTM (Restricted Transactional Memory) flags
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
   if (!supports_rtm() && UseRTMLocking) {
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag
     // setting during arguments processing. See use_biased_locking().

@@ -4014,6 +4014,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"EncodeP")==0 ||
         strcmp(opType,"EncodePKlass")==0 ||
         strcmp(opType,"DecodeNKlass")==0 ||
+        strcmp(opType,"FmaD") == 0 ||
+        strcmp(opType,"FmaF") == 0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||

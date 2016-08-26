@@ -199,13 +199,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (has_vshasig()) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      UseSHA = true;
-    }
-  } else if (UseSHA) {
-    if (!FLAG_IS_DEFAULT(UseSHA))
-      warning("SHA instructions are not available on this CPU");
+  if (UseFMA) {
+    warning("FMA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
+  if (UseSHA) {
+    warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
