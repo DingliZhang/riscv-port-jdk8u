@@ -3571,6 +3571,56 @@ operand immI_65535() %{
   interface(CONST_INTER);
 %}
 
+// Integer Immediate: the values 0-31
+operand immU5() %{
+  predicate(n->get_int() >= 0 && n->get_int() <= 31);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 6-bit
+operand immU6() %{
+  predicate(n->get_int() >= 0 && n->get_int() <= 63);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Unsigned Integer Immediate: 12-bit (non-negative that fits in simm13)
+operand immU12() %{
+  predicate((0 <= n->get_int()) && Assembler::is_simm13(n->get_int()));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Unsigned Long Immediate: 12-bit (non-negative that fits in simm13)
+operand immUL12() %{
+  predicate((0 <= n->get_long()) && (n->get_long() == (int)n->get_long()) && Assembler::is_simm13((int)n->get_long()));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate non-negative
+operand immU31()
+%{
+  predicate(n->get_int() >= 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: the value FF
 operand immL_FF() %{
   predicate( n->get_long() == 0xFFL );
