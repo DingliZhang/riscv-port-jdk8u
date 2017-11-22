@@ -1521,4 +1521,11 @@ const Type *PowDNode::Value( PhaseTransform *phase ) const {
   double d1 = t1->getd();
   double d2 = t2->getd();
   return TypeD::make( StubRoutines::intrinsic_pow( d1, d2 ) );
+const Type* SqrtFNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t1->base() != Type::FloatCon ) return Type::FLOAT;
+  float f = t1->getf();
+  if( f < 0.0f ) return Type::FLOAT;
+  return TypeF::make( (float)sqrt( (double)f ) );
 }

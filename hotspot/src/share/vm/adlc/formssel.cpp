@@ -4001,6 +4001,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"PowD")==0 ||
         strcmp(opType,"SinD")==0 ||
         strcmp(opType,"SqrtD")==0 ||
+        strcmp(opType,"SqrtF")==0 ||
         strcmp(opType,"TanD")==0 ||
         strcmp(opType,"ConvD2F")==0 ||
         strcmp(opType,"ConvD2I")==0 ||

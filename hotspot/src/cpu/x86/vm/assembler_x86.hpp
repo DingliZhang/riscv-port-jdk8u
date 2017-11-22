@@ -1780,10 +1780,16 @@ private:
   // Divide Packed Floating-Point Values
   void divpd(XMMRegister dst, XMMRegister src);
   void divps(XMMRegister dst, XMMRegister src);
-  void vdivpd(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
-  void vdivps(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256);
-  void vdivpd(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
-  void vdivps(XMMRegister dst, XMMRegister nds, Address src, bool vector256);
+  void vdivpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vdivps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vdivpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vdivps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  // Sqrt Packed Floating-Point Values
+  void vsqrtpd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vsqrtpd(XMMRegister dst, Address src, int vector_len);
+  void vsqrtps(XMMRegister dst, XMMRegister src, int vector_len);
+  void vsqrtps(XMMRegister dst, Address src, int vector_len);
 
   // Bitwise Logical AND of Packed Floating-Point Values
   void andpd(XMMRegister dst, XMMRegister src);

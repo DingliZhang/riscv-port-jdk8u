@@ -8262,6 +8262,472 @@ instruct vsqrt16F_mem(vecZ dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+// ------------------------------ LeftShift -----------------------------------
+
+// Shorts/Chars vector left shift
+instruct vsll2S(vecS dst, vecS shift) %{
+  predicate(UseAVX == 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_imm(vecS dst, immI8 shift) %{
+  predicate(UseAVX == 0 && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_avx(vecS dst, vecS src, vecS shift) %{
+  predicate(VM_Version::supports_avxonly() && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_evex(vecS dst, vecS src, vecS shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_evex_special(vecS dst, vecS src, vecS shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_imm_avx(vecS dst, vecS src, immI8 shift) %{
+  predicate(VM_Version::supports_avxonly() && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_imm_evex(vecS dst, vecS src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2S_reg_imm_evex_special(vecS dst, vecS src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed2S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S(vecD dst, vecS shift) %{
+  predicate(UseAVX == 0 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_imm(vecD dst, immI8 shift) %{
+  predicate(UseAVX == 0 && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_avx(vecD dst, vecD src, vecS shift) %{
+  predicate(VM_Version::supports_avxonly() && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_evex(vecD dst, vecD src, vecS shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_evex_special(vecD dst, vecD src, vecS shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_imm_avx(vecD dst, vecD src, immI8 shift) %{
+  predicate(VM_Version::supports_avxonly() && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_imm_evex(vecD dst, vecD src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll4S_reg_imm_evex_special(vecD dst, vecD src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 4);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed4S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S(vecX dst, vecS shift) %{
+  predicate(UseAVX == 0 && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_imm(vecX dst, immI8 shift) %{
+  predicate(UseAVX == 0 && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS dst shift));
+  format %{ "psllw   $dst,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    __ psllw($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_avx(vecX dst, vecX src, vecS shift) %{
+  predicate(VM_Version::supports_avxonly() && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_evex(vecX dst, vecX src, vecS shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_evex_special(vecX dst, vecX src, vecS shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_imm_avx(vecX dst, vecX src, immI8 shift) %{
+  predicate(VM_Version::supports_avxonly() && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_imm_evex(vecX dst, vecX src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll8S_reg_imm_evex_special(vecX dst, vecX src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 8);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed8S" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_avx(vecY dst, vecY src, vecS shift) %{
+  predicate(VM_Version::supports_avx256only() && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_evex(vecY dst, vecY src, vecS shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_evex_special(vecY dst, vecY src, vecS shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_imm_avx(vecY dst, vecY src, immI8 shift) %{
+  predicate(VM_Version::supports_avx256only() && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_imm_evex(vecY dst, vecY src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll16S_reg_imm_evex_special(vecY dst, vecY src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 16);
+  match(Set dst (LShiftVS dst shift));
+  effect(TEMP src);
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed16S" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll32S_reg(vecZ dst, vecZ src, vecS shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 32);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed32S" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, $shift$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll32S_reg_imm(vecZ dst, vecZ src, immI8 shift) %{
+  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 32);
+  match(Set dst (LShiftVS src shift));
+  format %{ "vpsllw  $dst,$src,$shift\t! left shift packed32S" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vpsllw($dst$$XMMRegister, $src$$XMMRegister, (int)$shift$$constant, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Integers vector left shift
+instruct vsll2I(vecD dst, vecS shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI dst shift));
+  format %{ "pslld   $dst,$shift\t! left shift packed2I" %}
+  ins_encode %{
+    __ pslld($dst$$XMMRegister, $shift$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2I_imm(vecD dst, immI8 shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (LShiftVI dst shift));
+  format %{ "pslld   $dst,$shift\t! left shift packed2I" %}
+  ins_encode %{
+    __ pslld($dst$$XMMRegister, (int)$shift$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsll2I_reg(vecD dst, vecD src, vecS shift) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt2F_mem(vecD dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt4F_reg(vecX dst, vecX src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed4F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt4F_mem(vecX dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed4F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt8F_reg(vecY dst, vecY src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed8F" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt8F_mem(vecY dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed8F" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt16F_reg(vecZ dst, vecZ src) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed16F" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt16F_mem(vecZ dst, memory mem) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed16F" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // ------------------------------ Shift ---------------------------------------
 
 // Left and right shift count vectors are the same on x86

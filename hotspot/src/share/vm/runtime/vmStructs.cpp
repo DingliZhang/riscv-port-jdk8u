@@ -1993,6 +1993,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(SinDNode, Node)                                         \
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
+  declare_c2_type(SqrtFNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
   declare_c2_type(ExpDNode, Node)                                         \
   declare_c2_type(LogDNode, Node)                                         \
