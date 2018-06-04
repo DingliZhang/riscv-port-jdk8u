@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/disassembler.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -45,7 +46,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
 
-# define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 
 //------------------------------------------------------------------------------------------------------------------------

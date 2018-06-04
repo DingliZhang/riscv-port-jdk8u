@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"
@@ -32,6 +33,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/resourceHash.hpp"
 #ifdef TARGET_ARCH_x86
 # include "depChecker_x86.hpp"
 #endif
@@ -70,7 +72,7 @@ static const char hsdis_library_name[] = "hsdis-" HOTSPOT_LIB_ARCH;
 static const char decode_instructions_virtual_name[] = "decode_instructions_virtual";
 static const char decode_instructions_name[] = "decode_instructions";
 static bool use_new_version = true;
-#define COMMENT_COLUMN  40 LP64_ONLY(+8) /*could be an option*/
+#define COMMENT_COLUMN  52 LP64_ONLY(+8) /*could be an option*/
 #define BYTES_COMMENT   ";..."  /* funky byte display comment */
 
 bool Disassembler::load_library() {
@@ -177,6 +179,7 @@ class decode_env {
   address       _cur_insn;
   int           _total_ticks;
   int           _bytes_per_line; // arch-specific formatting option
+  bool          _print_file_name;
 
   static bool match(const char* event, const char* tag) {
     size_t taglen = strlen(tag);
@@ -204,6 +207,51 @@ class decode_env {
   void print_insn_labels();
   void print_insn_bytes(address pc0, address pc);
   void print_address(address value);
+
+  struct SourceFileInfo {
+    struct Link : public CHeapObj<mtCode> {
+      const char* file;
+      int line;
+      Link* next;
+      Link(const char* f, int l) : file(f), line(l), next(NULL) {}
+    };
+    Link *head, *tail;
+
+    static unsigned hash(const address& a) {
+      return primitive_hash<address>(a);
+    }
+    static bool equals(const address& a0, const address& a1) {
+      return primitive_equals<address>(a0, a1);
+    }
+    void append(const char* file, int line) {
+      if (tail != NULL && tail->file == file && tail->line == line) {
+        // Don't print duplicated lines at the same address. This could happen with C
+        // macros that end up having multiple "__" tokens on the same __LINE__.
+        return;
+      }
+      Link *link = new Link(file, line);
+      if (head == NULL) {
+        head = tail = link;
+      } else {
+        tail->next = link;
+        tail = link;
+      }
+    }
+    SourceFileInfo(const char* file, int line) : head(NULL), tail(NULL) {
+      append(file, line);
+    }
+  };
+
+  typedef ResourceHashtable<
+      address, SourceFileInfo,
+      SourceFileInfo::hash,
+      SourceFileInfo::equals,
+      15889,      // prime number
+      ResourceObj::C_HEAP> SourceFileInfoTable;
+
+  static SourceFileInfoTable _src_table;
+  static const char* _cached_src;
+  static GrowableArray<const char*>* _cached_src_lines;
 
  public:
   decode_env(CodeBlob* code, outputStream* output, CodeStrings c = CodeStrings());
@@ -237,6 +285,7 @@ class decode_env {
         }
       }
     }
+    print_hook_comments(pc0, _nm != NULL);
     // follow each complete insn by a nice newline
     st->cr();
   }
@@ -248,7 +297,95 @@ class decode_env {
   int total_ticks() { return _total_ticks; }
   void set_total_ticks(int n) { _total_ticks = n; }
   const char* options() { return _option_buf; }
+  static void hook(const char* file, int line, address pc);
+  void print_hook_comments(address pc, bool newline);
 };
+
+decode_env::SourceFileInfoTable decode_env::_src_table;
+const char* decode_env::_cached_src = NULL;
+GrowableArray<const char*>* decode_env::_cached_src_lines = NULL;
+
+void decode_env::hook(const char* file, int line, address pc) {
+  // For simplication, we never free from this table. It's really not
+  // necessary as we add to the table only when PrintInterpreter is true,
+  // which means we are debugging the VM and a little bit of extra
+  // memory usage doesn't matter.
+  SourceFileInfo* found = _src_table.get(pc);
+  if (found != NULL) {
+    found->append(file, line);
+  } else {
+    SourceFileInfo sfi(file, line);
+    _src_table.put(pc, sfi); // sfi is copied by value
+  }
+}
+
+void decode_env::print_hook_comments(address pc, bool newline) {
+  SourceFileInfo* found = _src_table.get(pc);
+  outputStream* st = output();
+  if (found != NULL) {
+    for (SourceFileInfo::Link *link = found->head; link; link = link->next) {
+      const char* file = link->file;
+      int line = link->line;
+      if (_cached_src == NULL || strcmp(_cached_src, file) != 0) {
+        FILE* fp;
+
+        // _cached_src_lines is a single cache of the lines of a source file, and we refill this cache
+        // every time we need to print a line from a different source file. It's not the fastest,
+        // but seems bearable.
+        if (_cached_src_lines != NULL) {
+          for (int i=0; i<_cached_src_lines->length(); i++) {
+            os::free((void*)_cached_src_lines->at(i));
+          }
+          _cached_src_lines->clear();
+        } else {
+          _cached_src_lines = new (ResourceObj::C_HEAP, mtCode)GrowableArray<const char*>(0, true);
+        }
+
+        if ((fp = fopen(file, "r")) == NULL) {
+          _cached_src = NULL;
+          return;
+        }
+        _cached_src = file;
+
+        char line[500]; // don't write lines that are too long in your source files!
+        while (fgets(line, sizeof(line), fp) != NULL) {
+          size_t len = strlen(line);
+          if (len > 0 && line[len-1] == '\n') {
+            line[len-1] = '\0';
+          }
+          _cached_src_lines->append(os::strdup(line));
+        }
+        fclose(fp);
+        _print_file_name = true;
+      }
+
+      if (_print_file_name) {
+        // We print the file name whenever we switch to a new file, or when
+        // Disassembler::decode is called to disassemble a new block of code.
+        _print_file_name = false;
+        if (newline) {
+          st->cr();
+        }
+        st->move_to(COMMENT_COLUMN);
+        st->print(";;@FILE: %s", file);
+        newline = true;
+      }
+
+      int index = line - 1; // 1-based line number -> 0-based index.
+      if (index >= _cached_src_lines->length()) {
+        // This could happen if source file is mismatched.
+      } else {
+        const char* source_line = _cached_src_lines->at(index);
+        if (newline) {
+          st->cr();
+        }
+        st->move_to(COMMENT_COLUMN);
+        st->print(";;%5d: %s", line, source_line);
+        newline = true;
+      }
+    }
+  }
+}
 
 decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _nm((code != NULL && code->is_nmethod()) ? (nmethod*)code : NULL),
@@ -267,6 +404,7 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
 {
   memset(_option_buf, 0, sizeof(_option_buf));
   _strings.copy(c);
+  _print_file_name= true;
 
   // parse the global option string:
   collect_options(Disassembler::pd_cpu_opts());
@@ -565,4 +703,10 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   }
 
   env.decode_instructions(p, end);
+}
+
+// To prevent excessive code expansion in the interpreter generator, we
+// do not inline this function into Disassembler::hook().
+void Disassembler::_hook(const char* file, int line, MacroAssembler* masm) {
+  decode_env::hook(file, line, masm->code_section()->end());
 }
