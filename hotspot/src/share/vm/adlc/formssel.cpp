@@ -3784,7 +3784,8 @@ void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
     "AddI","AddL","AddF","AddD",
     "AndI","AndL",
-    "MaxI","MinI",
+    "AndV",
+    "MaxI","MinI","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulF","MulD",
     "OrI" ,"OrL" ,
     "XorI","XorL"

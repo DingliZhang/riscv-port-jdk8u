@@ -1028,6 +1028,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
+    @HotSpotIntrinsicCandidate
     public static float max(float a, float b) {
         return Math.max(a, b);
     }
@@ -1046,6 +1047,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
+    @HotSpotIntrinsicCandidate
     public static double max(double a, double b) {
         return Math.max(a, b);
     }
@@ -1092,6 +1094,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b.}
      */
+    @HotSpotIntrinsicCandidate
     public static float min(float a, float b) {
         return Math.min(a, b);
     }
@@ -1110,6 +1113,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
+    @HotSpotIntrinsicCandidate
     public static double min(double a, double b) {
         return Math.min(a, b);
     }
