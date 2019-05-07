@@ -972,25 +972,25 @@ void MacroAssembler::align(int modulus) {
   }
 }
 
-void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
   // Used in sign-masking with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::andpd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::andpd(dst, Address(rscratch1, 0));
+    lea(scratch_reg, src);
+    Assembler::andpd(dst, Address(scratch_reg, 0));
   }
 }
 
-void MacroAssembler::andps(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::andps(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
   // Used in sign-masking with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::andps(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::andps(dst, Address(rscratch1, 0));
+    lea(scratch_reg, src);
+    Assembler::andps(dst, Address(scratch_reg, 0));
   }
 }
 
@@ -3711,8 +3711,42 @@ void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     Assembler::movdqu(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::movdqu(dst, Address(rscratch1, 0));
+    lea(scratchReg, src);
+    movdqu(dst, Address(scratchReg, 0));
+  }
+}
+
+void MacroAssembler::vmovdqu(Address dst, XMMRegister src) {
+    assert(((src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+    Assembler::vmovdqu(dst, src);
+}
+
+void MacroAssembler::vmovdqu(XMMRegister dst, Address src) {
+    assert(((dst->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+    Assembler::vmovdqu(dst, src);
+}
+
+void MacroAssembler::vmovdqu(XMMRegister dst, XMMRegister src) {
+    assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+    Assembler::vmovdqu(dst, src);
+}
+
+void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
+  if (reachable(src)) {
+    vmovdqu(dst, as_Address(src));
+  }
+  else {
+    lea(scratch_reg, src);
+    vmovdqu(dst, Address(scratch_reg, 0));
+  }
+}
+
+void MacroAssembler::evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::evmovdquq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::evmovdquq(dst, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -3993,25 +4027,42 @@ void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
   // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::xorpd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::xorpd(dst, Address(rscratch1, 0));
+    lea(scratch_reg, src);
+    Assembler::xorpd(dst, Address(scratch_reg, 0));
   }
 }
 
-void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::xorpd(XMMRegister dst, XMMRegister src) {
+  if (UseAVX > 2 && !VM_Version::supports_avx512dq() && (dst->encoding() == src->encoding())) {
+    Assembler::vpxor(dst, dst, src, Assembler::AVX_512bit);
+  }
+  else {
+    Assembler::xorpd(dst, src);
+  }
+}
+
+void MacroAssembler::xorps(XMMRegister dst, XMMRegister src) {
+  if (UseAVX > 2 && !VM_Version::supports_avx512dq() && (dst->encoding() == src->encoding())) {
+    Assembler::vpxor(dst, dst, src, Assembler::AVX_512bit);
+  } else {
+    Assembler::xorps(dst, src);
+  }
+}
+
+void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
   // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::xorps(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::xorps(dst, Address(rscratch1, 0));
+    lea(scratch_reg, src);
+    Assembler::xorps(dst, Address(scratch_reg, 0));
   }
 }
 
@@ -4056,12 +4107,181 @@ void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
-void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vabsss(XMMRegister dst, XMMRegister nds, XMMRegister src, AddressLiteral negate_field, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vldq()),"XMM register should be 0-15");
+  vandps(dst, nds, negate_field, vector_len);
+}
+
+void MacroAssembler::vabssd(XMMRegister dst, XMMRegister nds, XMMRegister src, AddressLiteral negate_field, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vldq()),"XMM register should be 0-15");
+  vandpd(dst, nds, negate_field, vector_len);
+}
+
+void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpaddb(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()), "XMM register should be 0-15");
+  Assembler::vpaddb(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpaddw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpaddw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
     vandps(dst, nds, as_Address(src), vector256);
   } else {
-    lea(rscratch1, src);
-    vandps(dst, nds, Address(rscratch1, 0), vector256);
+    lea(scratch_reg, src);
+    Assembler::vpand(dst, nds, Address(scratch_reg, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpbroadcastw(dst, src, vector_len);
+}
+
+void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqb(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpcmpeqw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpmovzxbw(XMMRegister dst, Address src, int vector_len) {
+  assert(((dst->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpmovzxbw(dst, src, vector_len);
+}
+
+void MacroAssembler::vpmovmskb(Register dst, XMMRegister src) {
+  assert((src->encoding() < 16),"XMM register should be 0-15");
+  Assembler::vpmovmskb(dst, src);
+}
+
+void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpmullw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpmullw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsubb(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsubb(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsubw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpsubw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsubw(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len) {
+  assert(((dst->encoding() < 16 && shift->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsraw(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::vpsraw(XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsraw(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::evpsraq(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len) {
+  assert(UseAVX > 2,"");
+  if (!VM_Version::supports_avx512vl() && vector_len < 2) {
+     vector_len = 2;
+  }
+  Assembler::evpsraq(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::evpsraq(XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
+  assert(UseAVX > 2,"");
+  if (!VM_Version::supports_avx512vl() && vector_len < 2) {
+     vector_len = 2;
+  }
+  Assembler::evpsraq(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len) {
+  assert(((dst->encoding() < 16 && shift->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsrlw(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::vpsrlw(XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsrlw(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::vpsllw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len) {
+  assert(((dst->encoding() < 16 && shift->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsllw(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::vpsllw(XMMRegister dst, XMMRegister nds, int shift, int vector_len) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::vpsllw(dst, nds, shift, vector_len);
+}
+
+void MacroAssembler::vptest(XMMRegister dst, XMMRegister src) {
+  assert((dst->encoding() < 16 && src->encoding() < 16),"XMM register should be 0-15");
+  Assembler::vptest(dst, src);
+}
+
+void MacroAssembler::punpcklbw(XMMRegister dst, XMMRegister src) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::punpcklbw(dst, src);
+}
+
+void MacroAssembler::pshufd(XMMRegister dst, Address src, int mode) {
+  assert(((dst->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::pshufd(dst, src, mode);
+}
+
+void MacroAssembler::pshuflw(XMMRegister dst, XMMRegister src, int mode) {
+  assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
+  Assembler::pshuflw(dst, src, mode);
+}
+
+void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+  if (reachable(src)) {
+    vandpd(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(scratch_reg, src);
+    vandpd(dst, nds, Address(scratch_reg, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+  if (reachable(src)) {
+    vandps(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(scratch_reg, src);
+    vandps(dst, nds, Address(scratch_reg, 0), vector_len);
   }
 }
 
@@ -4119,22 +4339,177 @@ void MacroAssembler::vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
-void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vnegatess(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vldq()),"XMM register should be 0-15");
+  vxorps(dst, nds, src, Assembler::AVX_128bit);
+}
+
+void MacroAssembler::vnegatesd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  assert(((dst->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vldq()),"XMM register should be 0-15");
+  vxorpd(dst, nds, src, Assembler::AVX_128bit);
+}
+
+void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
     vxorpd(dst, nds, as_Address(src), vector256);
   } else {
-    lea(rscratch1, src);
-    vxorpd(dst, nds, Address(rscratch1, 0), vector256);
+    lea(scratch_reg, src);
+    vxorpd(dst, nds, Address(scratch_reg, 0), vector_len);
   }
 }
 
-void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, bool vector256) {
+void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
   if (reachable(src)) {
     vxorps(dst, nds, as_Address(src), vector256);
   } else {
-    lea(rscratch1, src);
-    vxorps(dst, nds, Address(rscratch1, 0), vector256);
+    lea(scratch_reg, src);
+    vxorps(dst, nds, Address(scratch_reg, 0), vector_len);
   }
+}
+
+void MacroAssembler::vpxor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+  if (UseAVX > 1 || (vector_len < 1)) {
+    if (reachable(src)) {
+      Assembler::vpxor(dst, nds, as_Address(src), vector_len);
+    } else {
+      lea(scratch_reg, src);
+      Assembler::vpxor(dst, nds, Address(scratch_reg, 0), vector_len);
+    }
+  }
+  else {
+    MacroAssembler::vxorpd(dst, nds, src, vector_len, scratch_reg);
+  }
+}
+
+//-------------------------------------------------------------------------------------------
+#ifdef COMPILER2
+// Generic instructions support for use in .ad files C2 code generation
+
+void MacroAssembler::vabsnegd(int opcode, XMMRegister dst, Register scr) {
+  if (opcode == Op_AbsVD) {
+    andpd(dst, ExternalAddress(StubRoutines::x86::vector_double_sign_mask()), scr);
+  } else {
+    assert((opcode == Op_NegVD),"opcode should be Op_NegD");
+    xorpd(dst, ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), scr);
+  }
+}
+
+void MacroAssembler::vabsnegd(int opcode, XMMRegister dst, XMMRegister src, int vector_len, Register scr) {
+  if (opcode == Op_AbsVD) {
+    vandpd(dst, src, ExternalAddress(StubRoutines::x86::vector_double_sign_mask()), vector_len, scr);
+  } else {
+    assert((opcode == Op_NegVD),"opcode should be Op_NegD");
+    vxorpd(dst, src, ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), vector_len, scr);
+  }
+}
+
+void MacroAssembler::vabsnegf(int opcode, XMMRegister dst, Register scr) {
+  if (opcode == Op_AbsVF) {
+    andps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_mask()), scr);
+  } else {
+    assert((opcode == Op_NegVF),"opcode should be Op_NegF");
+    xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), scr);
+  }
+}
+
+void MacroAssembler::vabsnegf(int opcode, XMMRegister dst, XMMRegister src, int vector_len, Register scr) {
+  if (opcode == Op_AbsVF) {
+    vandps(dst, src, ExternalAddress(StubRoutines::x86::vector_float_sign_mask()), vector_len, scr);
+  } else {
+    assert((opcode == Op_NegVF),"opcode should be Op_NegF");
+    vxorps(dst, src, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), vector_len, scr);
+  }
+}
+
+void MacroAssembler::vextendbw(bool sign, XMMRegister dst, XMMRegister src) {
+  if (sign) {
+    pmovsxbw(dst, src);
+  } else {
+    pmovzxbw(dst, src);
+  }
+}
+
+void MacroAssembler::vextendbw(bool sign, XMMRegister dst, XMMRegister src, int vector_len) {
+  if (sign) {
+    vpmovsxbw(dst, src, vector_len);
+  } else {
+    vpmovzxbw(dst, src, vector_len);
+  }
+}
+
+void MacroAssembler::vshiftd(int opcode, XMMRegister dst, XMMRegister src) {
+  if (opcode == Op_RShiftVI) {
+    psrad(dst, src);
+  } else if (opcode == Op_LShiftVI) {
+    pslld(dst, src);
+  } else {
+    assert((opcode == Op_URShiftVI),"opcode should be Op_URShiftVI");
+    psrld(dst, src);
+  }
+}
+
+void MacroAssembler::vshiftd(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  if (opcode == Op_RShiftVI) {
+    vpsrad(dst, nds, src, vector_len);
+  } else if (opcode == Op_LShiftVI) {
+    vpslld(dst, nds, src, vector_len);
+  } else {
+    assert((opcode == Op_URShiftVI),"opcode should be Op_URShiftVI");
+    vpsrld(dst, nds, src, vector_len);
+  }
+}
+
+void MacroAssembler::vshiftw(int opcode, XMMRegister dst, XMMRegister src) {
+  if ((opcode == Op_RShiftVS) || (opcode == Op_RShiftVB)) {
+    psraw(dst, src);
+  } else if ((opcode == Op_LShiftVS) || (opcode == Op_LShiftVB)) {
+    psllw(dst, src);
+  } else {
+    assert(((opcode == Op_URShiftVS) || (opcode == Op_URShiftVB)),"opcode should be one of Op_URShiftVS or Op_URShiftVB");
+    psrlw(dst, src);
+  }
+}
+
+void MacroAssembler::vshiftw(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  if ((opcode == Op_RShiftVS) || (opcode == Op_RShiftVB)) {
+    vpsraw(dst, nds, src, vector_len);
+  } else if ((opcode == Op_LShiftVS) || (opcode == Op_LShiftVB)) {
+    vpsllw(dst, nds, src, vector_len);
+  } else {
+    assert(((opcode == Op_URShiftVS) || (opcode == Op_URShiftVB)),"opcode should be one of Op_URShiftVS or Op_URShiftVB");
+    vpsrlw(dst, nds, src, vector_len);
+  }
+}
+
+void MacroAssembler::vshiftq(int opcode, XMMRegister dst, XMMRegister src) {
+  if (opcode == Op_RShiftVL) {
+    psrlq(dst, src);  // using srl to implement sra on pre-avs512 systems
+  } else if (opcode == Op_LShiftVL) {
+    psllq(dst, src);
+  } else {
+    assert((opcode == Op_URShiftVL),"opcode should be Op_URShiftVL");
+    psrlq(dst, src);
+  }
+}
+
+void MacroAssembler::vshiftq(int opcode, XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  if (opcode == Op_RShiftVL) {
+    evpsraq(dst, nds, src, vector_len);
+  } else if (opcode == Op_LShiftVL) {
+    vpsllq(dst, nds, src, vector_len);
+  } else {
+    assert((opcode == Op_URShiftVL),"opcode should be Op_URShiftVL");
+    vpsrlq(dst, nds, src, vector_len);
+  }
+}
+#endif
+//-------------------------------------------------------------------------------------------
+
+void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
+  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
+  // The inverted mask is sign-extended
+  andptr(possibly_jweak, inverted_jweak_mask);
 }
 
 void MacroAssembler::resolve_jobject(Register value,

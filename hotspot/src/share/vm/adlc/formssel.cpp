@@ -3787,8 +3787,11 @@ void MatchNode::count_commutative_op(int& count) {
     "AndV",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulF","MulD",
-    "OrI" ,"OrL" ,
-    "XorI","XorL"
+    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
+    "OrI","OrL",
+    "OrV",
+    "XorI","XorL",
+    "XorV"
   };
   int cnt = sizeof(commut_op_list)/sizeof(char*);
 
@@ -4118,8 +4121,12 @@ bool MatchRule::is_vector() const {
   static const char *vector_list[] = {
     "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
-    "MulVS","MulVI","MulVF","MulVD",
+    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
+    "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
+    "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
+    "NegVF","NegVD",
+    "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "LShiftCntV","RShiftCntV",
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",

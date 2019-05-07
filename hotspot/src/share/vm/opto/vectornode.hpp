@@ -162,6 +162,14 @@ class SubVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------MulVBNode--------------------------------------
+// Vector multiply byte
+class MulVBNode : public VectorNode {
+ public:
+  MulVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------MulVSNode--------------------------------------
 // Vector multiply short
 class MulVSNode : public VectorNode {
@@ -207,6 +215,94 @@ class DivVFNode : public VectorNode {
 class DivVDNode : public VectorNode {
  public:
   DivVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVBNode--------------------------------------
+// Vector Abs byte
+class AbsVBNode : public VectorNode {
+public:
+  AbsVBNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVSNode--------------------------------------
+// Vector Abs short
+class AbsVSNode : public VectorNode {
+public:
+  AbsVSNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVINode--------------------------------------
+// Vector Abs int
+class AbsVINode : public VectorNode {
+public:
+  AbsVINode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVLNode--------------------------------------
+// Vector Abs long
+class AbsVLNode : public VectorNode {
+public:
+  AbsVLNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVFNode--------------------------------------
+// Vector Abs float
+class AbsVFNode : public VectorNode {
+ public:
+  AbsVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVDNode--------------------------------------
+// Vector Abs double
+class AbsVDNode : public VectorNode {
+ public:
+  AbsVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------NegVFNode--------------------------------------
+// Vector Neg float
+class NegVFNode : public VectorNode {
+ public:
+  NegVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------NegVDNode--------------------------------------
+// Vector Neg double
+class NegVDNode : public VectorNode {
+ public:
+  NegVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------PopCountVINode---------------------------------
+// Vector popcount integer bits
+class PopCountVINode : public VectorNode {
+ public:
+  PopCountVINode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------SqrtVFNode--------------------------------------
+// Vector Sqrt float
+class SqrtVFNode : public VectorNode {
+ public:
+  SqrtVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------SqrtVDNode--------------------------------------
+// Vector Sqrt double
+class SqrtVDNode : public VectorNode {
+ public:
+  SqrtVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
   virtual int Opcode() const;
 };
 
