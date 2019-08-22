@@ -1020,10 +1020,11 @@ class CodeString: public CHeapObj<mtCode> {
   friend class CodeStrings;
   const char * _string;
   CodeString*  _next;
+  CodeString*  _prev;
   intptr_t     _offset;
 
   ~CodeString() {
-    assert(_next == NULL, "wrong interface for freeing list");
+    assert(_next == NULL && _prev == NULL, "wrong interface for freeing list");
     os::free((void*)_string, mtCode);
   }
 
@@ -1031,7 +1032,7 @@ class CodeString: public CHeapObj<mtCode> {
 
  public:
   CodeString(const char * string, intptr_t offset = -1)
-    : _next(NULL), _offset(offset) {
+    : _next(NULL), _prev(NULL), _offset(offset) {
     _string = os::strdup(string, mtCode);
   }
 
@@ -1039,7 +1040,12 @@ class CodeString: public CHeapObj<mtCode> {
   intptr_t     offset() const { assert(_offset >= 0, "offset for non comment?"); return _offset;  }
   CodeString* next()    const { return _next; }
 
-  void set_next(CodeString* next) { _next = next; }
+  void set_next(CodeString* next) {
+    _next = next;
+    if (next != NULL) {
+      next->_prev = this;
+    }
+  }
 
   CodeString* first_comment() {
     if (is_comment()) {
@@ -1067,12 +1073,9 @@ CodeString* CodeStrings::find(intptr_t offset) const {
 
 // Convenience for add_comment.
 CodeString* CodeStrings::find_last(intptr_t offset) const {
-  CodeString* a = find(offset);
-  if (a != NULL) {
-    CodeString* c = NULL;
-    while (((c = a->next_comment()) != NULL) && (c->offset() == offset)) {
-      a = c;
-    }
+  CodeString* a = _strings_last;
+  while (a != NULL && !a->is_comment() && a->offset() > offset) {
+    a = a->_prev;
   }
   return a;
 }
@@ -1091,6 +1094,9 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
     c->set_next(_strings);
     _strings = c;
   }
+  if (c->next() == NULL) {
+    _strings_last = c;
+  }
 }
 
 void CodeStrings::assign(CodeStrings& other) {
@@ -1098,6 +1104,10 @@ void CodeStrings::assign(CodeStrings& other) {
   // Cannot do following because CodeStrings constructor is not alway run!
   assert(is_null(), "Cannot assign onto non-empty CodeStrings");
   _strings = other._strings;
+  _strings_last = other._strings_last;
+#ifdef ASSERT
+  _defunct = false;
+#endif
   other.set_null_and_invalidate();
 }
 
@@ -1110,8 +1120,11 @@ void CodeStrings::copy(CodeStrings& other) {
   assert(is_null(), "Cannot copy onto non-empty CodeStrings");
   CodeString* n = other._strings;
   CodeString** ps = &_strings;
+  CodeString* prev = NULL;
   while (n != NULL) {
     *ps = new CodeString(n->string(),n->offset());
+    (*ps)->_prev = prev;
+    prev = *ps;
     ps = &((*ps)->_next);
     n = n->next();
   }
@@ -1137,6 +1150,10 @@ void CodeStrings::free() {
     // unlink the node from the list saving a pointer to the next
     CodeString* p = n->next();
     n->set_next(NULL);
+    if (p != NULL) {
+      assert(p->_prev == n, "missing prev link");
+      p->_prev = NULL;
+    }
     delete n;
     n = p;
   }
@@ -1147,6 +1164,9 @@ const char* CodeStrings::add_string(const char * string) {
   check_valid();
   CodeString* s = new CodeString(string);
   s->set_next(_strings);
+  if (_strings == NULL) {
+    _strings_last = s;
+  }
   _strings = s;
   assert(s->string() != NULL, "should have a string");
   return s->string();
