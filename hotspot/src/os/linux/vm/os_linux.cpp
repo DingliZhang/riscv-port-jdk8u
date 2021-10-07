@@ -1948,10 +1948,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   #endif
   #ifndef EM_AARCH64
   #define EM_AARCH64    183               /* ARM AARCH64 */
-  #endif
-  #ifndef EM_LOONGARCH
-  #define EM_LOONGARCH  258               /* LoongArch */
-  #endif
+#endif
+#ifndef EM_RISCV
+  #define EM_RISCV      243               /* RISC-V */
+#endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1975,45 +1975,47 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
-    {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
+    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
   };
 
-  #if  (defined IA32)
-    static  Elf32_Half running_arch_code=EM_386;
-  #elif   (defined AMD64)
-    static  Elf32_Half running_arch_code=EM_X86_64;
-  #elif  (defined IA64)
-    static  Elf32_Half running_arch_code=EM_IA_64;
-  #elif  (defined __sparc) && (defined _LP64)
-    static  Elf32_Half running_arch_code=EM_SPARCV9;
-  #elif  (defined __sparc) && (!defined _LP64)
-    static  Elf32_Half running_arch_code=EM_SPARC;
-  #elif  (defined __powerpc64__)
-    static  Elf32_Half running_arch_code=EM_PPC64;
-  #elif  (defined __powerpc__)
-    static  Elf32_Half running_arch_code=EM_PPC;
-  #elif  (defined ARM)
-    static  Elf32_Half running_arch_code=EM_ARM;
-  #elif  (defined S390)
-    static  Elf32_Half running_arch_code=EM_S390;
-  #elif  (defined ALPHA)
-    static  Elf32_Half running_arch_code=EM_ALPHA;
-  #elif  (defined MIPSEL)
-    static  Elf32_Half running_arch_code=EM_MIPS_RS3_LE;
-  #elif  (defined PARISC)
-    static  Elf32_Half running_arch_code=EM_PARISC;
-  #elif  (defined MIPS)
-    static  Elf32_Half running_arch_code=EM_MIPS;
-  #elif  (defined M68K)
-    static  Elf32_Half running_arch_code=EM_68K;
-  #elif  (defined AARCH64)
-    static  Elf32_Half running_arch_code=EM_AARCH64;
-  #elif  (defined LOONGARCH)
-    static  Elf32_Half running_arch_code=EM_LOONGARCH;
-  #else
+#if  (defined IA32)
+  static  Elf32_Half running_arch_code=EM_386;
+#elif   (defined AMD64)
+  static  Elf32_Half running_arch_code=EM_X86_64;
+#elif  (defined IA64)
+  static  Elf32_Half running_arch_code=EM_IA_64;
+#elif  (defined __sparc) && (defined _LP64)
+  static  Elf32_Half running_arch_code=EM_SPARCV9;
+#elif  (defined __sparc) && (!defined _LP64)
+  static  Elf32_Half running_arch_code=EM_SPARC;
+#elif  (defined __powerpc64__)
+  static  Elf32_Half running_arch_code=EM_PPC64;
+#elif  (defined __powerpc__)
+  static  Elf32_Half running_arch_code=EM_PPC;
+#elif  (defined AARCH64)
+  static  Elf32_Half running_arch_code=EM_AARCH64;
+#elif  (defined ARM)
+  static  Elf32_Half running_arch_code=EM_ARM;
+#elif  (defined S390)
+  static  Elf32_Half running_arch_code=EM_S390;
+#elif  (defined ALPHA)
+  static  Elf32_Half running_arch_code=EM_ALPHA;
+#elif  (defined MIPSEL)
+  static  Elf32_Half running_arch_code=EM_MIPS_RS3_LE;
+#elif  (defined PARISC)
+  static  Elf32_Half running_arch_code=EM_PARISC;
+#elif  (defined MIPS)
+  static  Elf32_Half running_arch_code=EM_MIPS;
+#elif  (defined M68K)
+  static  Elf32_Half running_arch_code=EM_68K;
+#elif  (defined SH)
+  static  Elf32_Half running_arch_code=EM_SH;
+#elif  (defined RISCV)
+  static  Elf32_Half running_arch_code=EM_RISCV;
+#else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K, AARCH64, LOONGARCH
-  #endif
+        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+#endif
 
   // Identify compatability class for VM's architecture and library's architecture
   // Obtain string descriptions for architectures

@@ -72,6 +72,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
+    riscv64)
+      VAR_CPU=riscv64
+      VAR_CPU_ARCH=riscv
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     s390)
       VAR_CPU=s390
       VAR_CPU_ARCH=s390
@@ -436,8 +442,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
     HOTSPOT_$1_CPU_DEFINE=S390
   elif test "x$OPENJDK_$1_CPU" = xriscv64; then
     HOTSPOT_$1_CPU_DEFINE=RISCV
-  elif test "x$OPENJDK_$1_CPU" = xloongarch64; then
-    HOTSPOT_$1_CPU_DEFINE=LOONGARCH64
   elif test "x$OPENJDK_$1_CPU" != x; then
     HOTSPOT_$1_CPU_DEFINE=$(echo $OPENJDK_$1_CPU | tr a-z A-Z)
   fi
