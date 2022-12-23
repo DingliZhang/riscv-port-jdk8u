@@ -906,7 +906,13 @@ BUILD_LOG_PREVIOUS
 BUILD_LOG
 TOPDIR
 PATH_SEP
-ZERO_ARCHDEF
+OPENJDK__OS_INCLUDE_SUBDIR
+HOTSPOT__LIBC
+HOTSPOT__CPU_DEFINE
+HOTSPOT__CPU_ARCH
+HOTSPOT__CPU
+HOTSPOT__OS_TYPE
+HOTSPOT__OS
 DEFINE_CROSS_COMPILE_ARCH
 LP64
 OPENJDK_TARGET_OS_EXPORT_DIR
@@ -1017,7 +1023,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1263,7 +1268,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1516,15 +1520,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1662,7 +1657,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1815,7 +1810,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -4057,7 +4051,7 @@ fi
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4440,7 +4434,7 @@ VS_TOOLSET_SUPPORTED_2022=true
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1704508692
+DATE_WHEN_GENERATED=1716975098
 
 ###############################################################################
 #
@@ -13906,6 +13900,12 @@ test -n "$target_alias" &&
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
+    riscv64)
+      VAR_CPU=riscv64
+      VAR_CPU_ARCH=riscv
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     s390)
       VAR_CPU=s390
       VAR_CPU_ARCH=s390
@@ -14047,6 +14047,12 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
     powerpc64le)
       VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    riscv64)
+      VAR_CPU=riscv64
+      VAR_CPU_ARCH=riscv
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -14293,16 +14299,78 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
-  # ZERO_ARCHDEF is used to enable architecture-specific code
-  case "${OPENJDK_TARGET_CPU}" in
-    ppc)     ZERO_ARCHDEF=PPC32 ;;
-    ppc64)   ZERO_ARCHDEF=PPC64 ;;
-    s390*)   ZERO_ARCHDEF=S390  ;;
-    sparc*)  ZERO_ARCHDEF=SPARC ;;
-    x86_64*) ZERO_ARCHDEF=AMD64 ;;
-    x86)     ZERO_ARCHDEF=IA32  ;;
-    *)      ZERO_ARCHDEF=$(echo "${OPENJDK_TARGET_CPU_LEGACY_LIB}" | tr a-z A-Z)
-  esac
+  # Convert openjdk platform names to hotspot names
+
+  HOTSPOT__OS=${OPENJDK__OS}
+  if test "x$OPENJDK__OS" = xmacosx; then
+    HOTSPOT__OS=bsd
+  fi
+
+
+  HOTSPOT__OS_TYPE=${OPENJDK__OS_TYPE}
+  if test "x$OPENJDK__OS_TYPE" = xunix; then
+    HOTSPOT__OS_TYPE=posix
+  fi
+
+
+  HOTSPOT__CPU=${OPENJDK__CPU}
+  if test "x$OPENJDK__CPU" = xx86; then
+    HOTSPOT__CPU=x86_32
+  elif test "x$OPENJDK__CPU" = xsparcv9; then
+    HOTSPOT__CPU=sparc
+  elif test "x$OPENJDK__CPU" = xppc64; then
+    HOTSPOT__CPU=ppc_64
+  elif test "x$OPENJDK__CPU" = xppc64le; then
+    HOTSPOT__CPU=ppc_64
+  fi
+
+
+  # This is identical with OPENJDK_*, but define anyway for consistency.
+  HOTSPOT__CPU_ARCH=${OPENJDK__CPU_ARCH}
+
+
+  # Setup HOTSPOT__CPU_DEFINE
+  if test "x$OPENJDK__CPU" = xx86; then
+    HOTSPOT__CPU_DEFINE=IA32
+  elif test "x$OPENJDK__CPU" = xx86_64; then
+    HOTSPOT__CPU_DEFINE=AMD64
+  elif test "x$OPENJDK__CPU" = xsparcv9; then
+    HOTSPOT__CPU_DEFINE=SPARC
+  elif test "x$OPENJDK__CPU" = xaarch64; then
+    HOTSPOT__CPU_DEFINE=AARCH64
+  elif test "x$OPENJDK__CPU" = xppc64; then
+    HOTSPOT__CPU_DEFINE=PPC64
+  elif test "x$OPENJDK__CPU" = xppc64le; then
+    HOTSPOT__CPU_DEFINE=PPC64
+  elif test "x$OPENJDK__CPU" = xriscv64; then
+    HOTSPOT__CPU_DEFINE=RISCV64
+
+  # The cpu defines below are for zero, we don't support them directly.
+  elif test "x$OPENJDK__CPU" = xsparc; then
+    HOTSPOT__CPU_DEFINE=SPARC
+  elif test "x$OPENJDK__CPU" = xppc; then
+    HOTSPOT__CPU_DEFINE=PPC32
+  elif test "x$OPENJDK__CPU" = xs390; then
+    HOTSPOT__CPU_DEFINE=S390
+  elif test "x$OPENJDK__CPU" = xs390x; then
+    HOTSPOT__CPU_DEFINE=S390
+  elif test "x$OPENJDK__CPU" = xriscv64; then
+    HOTSPOT__CPU_DEFINE=RISCV
+  elif test "x$OPENJDK__CPU" != x; then
+    HOTSPOT__CPU_DEFINE=$(echo $OPENJDK__CPU | tr a-z A-Z)
+  fi
+
+
+  HOTSPOT__LIBC=$OPENJDK__LIBC
+
+
+  # For historical reasons, the OS include directories have odd names.
+  OPENJDK__OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    OPENJDK__OS_INCLUDE_SUBDIR="win32"
+  elif test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    OPENJDK__OS_INCLUDE_SUBDIR="darwin"
+  fi
 
 
 
