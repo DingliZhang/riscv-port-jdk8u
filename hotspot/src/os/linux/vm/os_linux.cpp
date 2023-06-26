@@ -1950,6 +1950,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   #define EM_AARCH64    183               /* ARM AARCH64 */
   #endif
 
+  #ifndef EM_RISCV
+  #define EM_RISCV      243               /* RISC-V */
+  #endif
+
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
     {EM_486,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1972,6 +1976,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
+#ifdef _LP64
+    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISCV64"},
+#else
+    {EM_RISCV,       EM_RISCV,   ELFCLASS32, ELFDATA2LSB, (char*)"RISCV32"},
+#endif
   };
 
   #if  (defined IA32)
@@ -2004,9 +2013,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     static  Elf32_Half running_arch_code=EM_68K;
   #elif  (defined AARCH64)
     static  Elf32_Half running_arch_code=EM_AARCH64;
+  #elif  (defined RISCV)
+    static  Elf32_Half running_arch_code=EM_RISCV;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K, AARCH64
+         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K, AARCH64, RISCV
   #endif
 
   // Identify compatability class for VM's architecture and library's architecture
@@ -2039,10 +2050,12 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   }
 
 #ifndef S390
+#ifndef RISCV
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
     ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
     return NULL;
   }
+#endif // RISCV
 #endif // !S390
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
