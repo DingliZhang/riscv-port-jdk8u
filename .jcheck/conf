@@ -1,5 +1,5 @@
 [general]
-project=jdk8u
+project=riscv-port
 jbs=JDK
 version=openjdk8u392
 
