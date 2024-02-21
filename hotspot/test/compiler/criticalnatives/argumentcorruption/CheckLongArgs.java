@@ -21,6 +21,13 @@
  * questions.
  */
 
+
+/* @test
+ * @bug 8167409
+ * @requires (os.arch != "aarch64") & (os.arch != "riscv64") & (os.arch != "arm")
+ * @run main/othervm/native -Xcomp -XX:+CriticalJNINatives compiler.runtime.criticalnatives.argumentcorruption.CheckLongArgs
+ */
+package compiler.runtime.criticalnatives.argumentcorruption;
 public class CheckLongArgs {
     static {
         System.loadLibrary("CNCheckLongArgs");

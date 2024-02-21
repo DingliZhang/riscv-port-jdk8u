@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -379,17 +379,81 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
   fi
   AC_SUBST(DEFINE_CROSS_COMPILE_ARCH)
 
-  # ZERO_ARCHDEF is used to enable architecture-specific code
-  case "${OPENJDK_TARGET_CPU}" in
-    ppc)     ZERO_ARCHDEF=PPC32 ;;
-    ppc64)   ZERO_ARCHDEF=PPC64 ;;
-    s390*)   ZERO_ARCHDEF=S390  ;;
-    sparc*)  ZERO_ARCHDEF=SPARC ;;
-    x86_64*) ZERO_ARCHDEF=AMD64 ;;
-    x86)     ZERO_ARCHDEF=IA32  ;;
-    *)      ZERO_ARCHDEF=$(echo "${OPENJDK_TARGET_CPU_LEGACY_LIB}" | tr a-z A-Z)
-  esac
-  AC_SUBST(ZERO_ARCHDEF)
+  # Convert openjdk platform names to hotspot names
+
+  HOTSPOT_$1_OS=${OPENJDK_$1_OS}
+  if test "x$OPENJDK_$1_OS" = xmacosx; then
+    HOTSPOT_$1_OS=bsd
+  fi
+  AC_SUBST(HOTSPOT_$1_OS)
+
+  HOTSPOT_$1_OS_TYPE=${OPENJDK_$1_OS_TYPE}
+  if test "x$OPENJDK_$1_OS_TYPE" = xunix; then
+    HOTSPOT_$1_OS_TYPE=posix
+  fi
+  AC_SUBST(HOTSPOT_$1_OS_TYPE)
+
+  HOTSPOT_$1_CPU=${OPENJDK_$1_CPU}
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    HOTSPOT_$1_CPU=x86_32
+  elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
+    HOTSPOT_$1_CPU=sparc
+  elif test "x$OPENJDK_$1_CPU" = xppc64; then
+    HOTSPOT_$1_CPU=ppc_64
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
+    HOTSPOT_$1_CPU=ppc_64
+  fi
+  AC_SUBST(HOTSPOT_$1_CPU)
+
+  # This is identical with OPENJDK_*, but define anyway for consistency.
+  HOTSPOT_$1_CPU_ARCH=${OPENJDK_$1_CPU_ARCH}
+  AC_SUBST(HOTSPOT_$1_CPU_ARCH)
+
+  # Setup HOTSPOT_$1_CPU_DEFINE
+  if test "x$OPENJDK_$1_CPU" = xx86; then
+    HOTSPOT_$1_CPU_DEFINE=IA32
+  elif test "x$OPENJDK_$1_CPU" = xx86_64; then
+    HOTSPOT_$1_CPU_DEFINE=AMD64
+  elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
+    HOTSPOT_$1_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_$1_CPU" = xaarch64; then
+    HOTSPOT_$1_CPU_DEFINE=AARCH64
+  elif test "x$OPENJDK_$1_CPU" = xppc64; then
+    HOTSPOT_$1_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_$1_CPU" = xppc64le; then
+    HOTSPOT_$1_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_$1_CPU" = xriscv64; then
+    HOTSPOT_$1_CPU_DEFINE=RISCV64
+
+  # The cpu defines below are for zero, we don't support them directly.
+  elif test "x$OPENJDK_$1_CPU" = xsparc; then
+    HOTSPOT_$1_CPU_DEFINE=SPARC
+  elif test "x$OPENJDK_$1_CPU" = xppc; then
+    HOTSPOT_$1_CPU_DEFINE=PPC32
+  elif test "x$OPENJDK_$1_CPU" = xs390; then
+    HOTSPOT_$1_CPU_DEFINE=S390
+  elif test "x$OPENJDK_$1_CPU" = xs390x; then
+    HOTSPOT_$1_CPU_DEFINE=S390
+  elif test "x$OPENJDK_$1_CPU" = xriscv64; then
+    HOTSPOT_$1_CPU_DEFINE=RISCV
+  elif test "x$OPENJDK_$1_CPU" = xloongarch64; then
+    HOTSPOT_$1_CPU_DEFINE=LOONGARCH64
+  elif test "x$OPENJDK_$1_CPU" != x; then
+    HOTSPOT_$1_CPU_DEFINE=$(echo $OPENJDK_$1_CPU | tr a-z A-Z)
+  fi
+  AC_SUBST(HOTSPOT_$1_CPU_DEFINE)
+
+  HOTSPOT_$1_LIBC=$OPENJDK_$1_LIBC
+  AC_SUBST(HOTSPOT_$1_LIBC)
+
+  # For historical reasons, the OS include directories have odd names.
+  OPENJDK_$1_OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    OPENJDK_$1_OS_INCLUDE_SUBDIR="win32"
+  elif test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    OPENJDK_$1_OS_INCLUDE_SUBDIR="darwin"
+  fi
+  AC_SUBST(OPENJDK_$1_OS_INCLUDE_SUBDIR)
 ])
 
 AC_DEFUN([PLATFORM_SET_RELEASE_FILE_OS_VALUES],
