@@ -39,6 +39,7 @@ import sun.jvm.hotspot.debugger.linux.amd64.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.linux.aarch64.*;
 import sun.jvm.hotspot.debugger.linux.riscv64.*;
+import sun.jvm.hotspot.debugger.linux.sparc.*;
 import sun.jvm.hotspot.utilities.*;
 
 class LinuxCDebugger implements CDebugger {
