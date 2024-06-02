@@ -399,7 +399,7 @@ public class AARCH64Frame extends Frame {
       map.setIncludeArgumentOops(cb.callerMustGCArguments());
 
       if (cb.getOopMaps() != null) {
-        OopMapSet.updateRegisterMap(this, cb, map, true);
+        ImmutableOopMapSet.updateRegisterMap(this, cb, map, true);
       }
 
       // Since the prolog does the save and restore of FP there is no oopmap
