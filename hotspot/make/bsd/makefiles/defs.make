@@ -124,6 +124,14 @@ ifeq ($(ARCH), ppc)
   HS_ARCH          = ppc
 endif
 
+# riscv
+ifneq (,$(findstring $(ARCH), amd64 x86_64))
+    ARCH_DATA_MODEL = 64
+    PLATFORM        = bsd-riscv
+    VM_PLATFORM     = bsd_riscv
+    HS_ARCH         = riscv
+endif
+
 # On 32 bit bsd we build server and client, on 64 bit just server.
 ifeq ($(JVM_VARIANTS),)
   ifeq ($(ARCH_DATA_MODEL), 32)
