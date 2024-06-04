@@ -123,6 +123,15 @@ ifeq ($(ARCH), aarch64)
   HS_ARCH          = aarch64
 endif
 
+# RISCV64
+ifeq ($(ARCH), riscv64)
+  ARCH_DATA_MODEL  = 64
+  MAKE_ARGS        += LP64=1
+  PLATFORM         = linux-riscv64
+  VM_PLATFORM      = linux_riscv64
+  HS_ARCH          = riscv
+endif
+
 # On 32 bit linux we build server and client, on 64 bit just server.
 ifeq ($(JVM_VARIANTS),)
   ifeq ($(ARCH_DATA_MODEL), 32)
@@ -311,16 +320,20 @@ ADD_SA_BINARIES/sparc = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar
 ADD_SA_BINARIES/aarch64 = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar
+ADD_SA_BINARIES/riscv64 = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
+                        $(EXPORT_LIB_DIR)/sa-jdi.jar
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifneq ($(STRIP_POLICY),no_strip)
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
       ADD_SA_BINARIES/x86     += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
       ADD_SA_BINARIES/sparc   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
       ADD_SA_BINARIES/aarch64 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+      ADD_SA_BINARIES/riscv64 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
     else
       ADD_SA_BINARIES/x86     += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
       ADD_SA_BINARIES/sparc   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
       ADD_SA_BINARIES/aarch64 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+      ADD_SA_BINARIES/riscv64 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
     endif
   endif
 endif
