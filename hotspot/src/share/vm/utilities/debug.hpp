@@ -151,7 +151,8 @@ do {                                                                         \
 // Do not assert this condition if there's already another error reported.
 #define assert_if_no_error(cond,msg) assert((cond) || is_error_reported(), msg)
 #else // #ifdef ASSERT
-  #define assert(p,msg)
+  // For backward compatibility.
+  #define assert(p, ...) vmassert(p, __VA_ARGS__)
   #define assert_status(p,status,msg)
   #define assert_if_no_error(cond,msg)
 #endif // #ifdef ASSERT
