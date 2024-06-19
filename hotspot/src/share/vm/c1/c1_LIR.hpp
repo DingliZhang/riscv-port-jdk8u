@@ -924,6 +924,7 @@ enum LIR_Code {
       , lir_null_check
       , lir_return
       , lir_leal
+      , lir_neg
       , lir_move
       , lir_prefetchr
       , lir_prefetchw
