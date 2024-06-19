@@ -366,24 +366,6 @@ instruct absI_reg_rvb(iRegINoSp dst, iRegI src) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct absL_reg_rvb(iRegLNoSp dst, iRegL src) %{
-  predicate(UseRVB);
-  match(Set dst (AbsL src));
-
-  ins_cost(ALU_COST * 2);
-  format %{
-    "neg  t0, $src\n\t"
-    "max $dst, $src, t0\t#@absL_reg_rvb"
-  %}
-
-  ins_encode %{
-    __ neg(t0, as_Register($src$$reg));
-    __ max(as_Register($dst$$reg), as_Register($src$$reg), t0);
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
 // And Not
 instruct andnI_reg_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
   predicate(UseRVB);
