@@ -33,7 +33,6 @@ import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.sparc.*;
 import sun.jvm.hotspot.debugger.riscv64.*;
-import sun.jvm.hotspot.debugger.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
