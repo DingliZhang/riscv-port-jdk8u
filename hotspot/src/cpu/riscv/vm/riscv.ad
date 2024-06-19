@@ -6171,24 +6171,6 @@ instruct mulD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
 %}
 
 // src1 * src2 + src3
-instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary src1 src2)));
-
-  ins_cost(FMUL_SINGLE_COST);
-  format %{ "fmadd.s  $dst, $src1, $src2, $src3\t#@maddF_reg_reg" %}
-
-  ins_encode %{
-    __ fmadd_s(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src1$$reg),
-               as_FloatRegister($src2$$reg),
-               as_FloatRegister($src3$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-// src1 * src2 + src3
 instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   predicate(UseFMA);
   match(Set dst (FmaD src3 (Binary src1 src2)));
@@ -6198,24 +6180,6 @@ instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 
   ins_encode %{
     __ fmadd_d(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src1$$reg),
-               as_FloatRegister($src2$$reg),
-               as_FloatRegister($src3$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-// src1 * src2 - src3
-instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
-
-  ins_cost(FMUL_SINGLE_COST);
-  format %{ "fmsub.s  $dst, $src1, $src2, $src3\t#@msubF_reg_reg" %}
-
-  ins_encode %{
-    __ fmsub_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
                as_FloatRegister($src3$$reg));
@@ -6237,63 +6201,6 @@ instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
                as_FloatRegister($src3$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-// -src1 * src2 + src3
-instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
-  match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
-
-  ins_cost(FMUL_SINGLE_COST);
-  format %{ "fnmsub.s  $dst, $src1, $src2, $src3\t#@nmsubF_reg_reg" %}
-
-  ins_encode %{
-    __ fnmsub_s(as_FloatRegister($dst$$reg),
-                as_FloatRegister($src1$$reg),
-                as_FloatRegister($src2$$reg),
-                as_FloatRegister($src3$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-// -src1 * src2 + src3
-instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
-  match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
-
-  ins_cost(FMUL_DOUBLE_COST);
-  format %{ "fnmsub.d  $dst, $src1, $src2, $src3\t#@nmsubD_reg_reg" %}
-
-  ins_encode %{
-    __ fnmsub_d(as_FloatRegister($dst$$reg),
-                as_FloatRegister($src1$$reg),
-                as_FloatRegister($src2$$reg),
-                as_FloatRegister($src3$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-// -src1 * src2 - src3
-instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
-  match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
-
-  ins_cost(FMUL_SINGLE_COST);
-  format %{ "fnmadd.s  $dst, $src1, $src2, $src3\t#@nmaddF_reg_reg" %}
-
-  ins_encode %{
-    __ fnmadd_s(as_FloatRegister($dst$$reg),
-                as_FloatRegister($src1$$reg),
-                as_FloatRegister($src2$$reg),
-                as_FloatRegister($src3$$reg));
   %}
 
   ins_pipe(pipe_class_default);
