@@ -398,7 +398,7 @@ public class RISCV64Frame extends Frame {
       map.setIncludeArgumentOops(cb.callerMustGCArguments());
 
       if (cb.getOopMaps() != null) {
-        ImmutableOopMapSet.updateRegisterMap(this, cb, map, true);
+        OopMapSet.updateRegisterMap(this, cb, map, true);
       }
 
       // Since the prolog does the save and restore of FP there is no oopmap
