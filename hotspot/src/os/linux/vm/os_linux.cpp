@@ -2384,14 +2384,6 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
   st->cr();
 }
 
-void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Only print the model name if the platform provides this as a summary
-  if (!print_model_name_and_flags(st, buf, buflen)) {
-    _print_ascii_file_h("\n/proc/cpuinfo", "/proc/cpuinfo", st);
-  }
-  print_sys_devices_cpu_info(st, buf, buflen);
-}
-
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
 #elif defined(M68K)
@@ -2405,64 +2397,6 @@ const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
 #endif
-
-// Parses the cpuinfo file for string representing the model name.
-void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
-  FILE* fp = fopen("/proc/cpuinfo", "r");
-  if (fp != NULL) {
-    while (!feof(fp)) {
-      char buf[256];
-      if (fgets(buf, sizeof(buf), fp)) {
-        char* start = strstr(buf, search_string);
-        if (start != NULL) {
-          char *ptr = start + strlen(search_string);
-          char *end = buf + strlen(buf);
-          while (ptr != end) {
-             // skip whitespace and colon for the rest of the name.
-             if (*ptr != ' ' && *ptr != '\t' && *ptr != ':') {
-               break;
-             }
-             ptr++;
-          }
-          if (ptr != end) {
-            // reasonable string, get rid of newline and keep the rest
-            char* nl = strchr(buf, '\n');
-            if (nl != NULL) *nl = '\0';
-            strncpy(cpuinfo, ptr, length);
-            fclose(fp);
-            return;
-          }
-        }
-      }
-    }
-    fclose(fp);
-  }
-  // cpuinfo not found or parsing failed, just print generic string.  The entire
-  // /proc/cpuinfo file will be printed later in the file (or enough of it for x86)
-#if   defined(AARCH64)
-  strncpy(cpuinfo, "AArch64", length);
-#elif defined(AMD64)
-  strncpy(cpuinfo, "x86_64", length);
-#elif defined(ARM)  // Order wrt. AARCH64 is relevant!
-  strncpy(cpuinfo, "ARM", length);
-#elif defined(IA32)
-  strncpy(cpuinfo, "x86_32", length);
-#elif defined(IA64)
-  strncpy(cpuinfo, "IA64", length);
-#elif defined(PPC)
-  strncpy(cpuinfo, "PPC64", length);
-#elif defined(RISCV)
-  strncpy(cpuinfo, "RISCV64", length);
-#elif defined(S390)
-  strncpy(cpuinfo, "S390", length);
-#elif defined(SPARC)
-  strncpy(cpuinfo, "sparcv9", length);
-#elif defined(ZERO_LIBARCH)
-  strncpy(cpuinfo, ZERO_LIBARCH, length);
-#else
-  strncpy(cpuinfo, "unknown", length);
-#endif
-}
 
 static void print_signal_handler(outputStream* st, int sig,
                                  char* buf, size_t buflen);
@@ -3606,7 +3540,6 @@ size_t os::Linux::find_large_page_size() {
     IA32_ONLY(4 * M)
     IA64_ONLY(256 * M)
     PPC_ONLY(4 * M)
-    S390_ONLY(1 * M)
     SPARC_ONLY(4 * M)
     RISCV64_ONLY(2 * M);
 #endif // ZERO
