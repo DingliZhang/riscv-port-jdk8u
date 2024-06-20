@@ -276,26 +276,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(t0, fn);
       __ jalr(t0);
       break;
-    case Interpreter::java_lang_math_fmaD :
-      if (UseFMA) {
-        entry_point = __ pc();
-        __ fld(f10, Address(esp, 4 * Interpreter::stackElementSize));
-        __ fld(f11, Address(esp, 2 * Interpreter::stackElementSize));
-        __ fld(f12, Address(esp));
-        __ fmadd_d(f10, f10, f11, f12);
-        __ mv(sp, x30); // Restore caller's SP
-      }
-      break;
-    case Interpreter::java_lang_math_fmaF :
-      if (UseFMA) {
-        entry_point = __ pc();
-        __ flw(f10, Address(esp, 2 * Interpreter::stackElementSize));
-        __ flw(f11, Address(esp, Interpreter::stackElementSize));
-        __ flw(f12, Address(esp));
-        __ fmadd_s(f10, f10, f11, f12);
-        __ mv(sp, x30); // Restore caller's SP
-      }
-      break;
     default:
       ;
   }

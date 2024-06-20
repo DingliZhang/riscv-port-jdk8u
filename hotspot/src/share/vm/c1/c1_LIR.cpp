@@ -1850,8 +1850,6 @@ const char * LIR_Op::name() const {
      // LIR_Op3
      case lir_idiv:                  s = "idiv";          break;
      case lir_irem:                  s = "irem";          break;
-     case lir_fmad:                  s = "fmad";          break;
-     case lir_fmaf:                  s = "fmaf";          break;
      // LIR_Op4
      case lir_cmove:                 s = "cmove";         break;
      // LIR_OpJavaCall

@@ -38,10 +38,6 @@ uint32_t VM_Version::_initial_vector_length = 0;
 void VM_Version::initialize() {
   get_os_cpu_info();
 
-  if (FLAG_IS_DEFAULT(UseFMA)) {
-    FLAG_SET_DEFAULT(UseFMA, true);
-  }
-
   if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
