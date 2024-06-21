@@ -421,6 +421,9 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
 #ifdef TARGET_ARCH_aarch64
 # include "relocInfo_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "relocInfo_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "relocInfo_sparc.hpp"
 #endif
