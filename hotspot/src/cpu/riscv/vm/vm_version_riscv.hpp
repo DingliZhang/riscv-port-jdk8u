@@ -27,7 +27,7 @@
 #ifndef CPU_RISCV_VM_VERSION_RISCV_HPP
 #define CPU_RISCV_VM_VERSION_RISCV_HPP
 
-#include "runtime/abstract_vm_version.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/sizes.hpp"
