@@ -33,6 +33,9 @@
 #ifdef TARGET_ARCH_aarch64
 # include "register_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "register_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "register_sparc.hpp"
 #endif
