@@ -160,6 +160,8 @@ class Bytes: AllStatic {
   static inline void put_Java_u8(address p, u8 x) { put_native_u8(p, swap_u8(x)); }
 };
 
-#include OS_CPU_HEADER(bytes)
+#ifdef TARGET_OS_ARCH_linux_riscv
+# include "bytes_linux_riscv.inline.hpp"
+#endif
 
 #endif // CPU_RISCV_BYTES_RISCV_HPP
