@@ -25,6 +25,7 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -44,6 +45,14 @@
 Register InterpreterRuntime::SignatureHandlerGenerator::from() { return xlocals; }
 Register InterpreterRuntime::SignatureHandlerGenerator::to()   { return sp; }
 Register InterpreterRuntime::SignatureHandlerGenerator::temp() { return t0; }
+
+InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
+      const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+  _masm = new MacroAssembler(buffer);
+  _num_int_args = (method->is_static() ? 1 : 0);
+  _num_fp_args = 0;
+  _stack_offset = 0;
+}
 
 Register InterpreterRuntime::SignatureHandlerGenerator::next_gpr() {
   if (_num_reg_int_args < Argument::n_int_register_parameters_c - 1) {

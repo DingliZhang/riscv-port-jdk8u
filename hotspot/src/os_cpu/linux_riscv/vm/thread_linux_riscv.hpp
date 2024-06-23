@@ -31,7 +31,10 @@
     _anchor.clear();
   }
 
-  frame pd_last_frame();
+  frame pd_last_frame() {
+    assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
+    return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  }
 
  public:
   // Mutators are highly dangerous....

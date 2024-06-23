@@ -27,8 +27,8 @@
 #ifndef CPU_RISCV_INTERPRETERRT_RISCV_HPP
 #define CPU_RISCV_INTERPRETERRT_RISCV_HPP
 
-// This is included in the middle of class Interpreter.
-// Do not include files here.
+#include "asm/macroAssembler.hpp"
+#include "memory/allocation.hpp"
 
 // native method calls
 
@@ -51,7 +51,12 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 
  public:
   // Creation
-  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer);
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+    _masm = new MacroAssembler(buffer);
+    _num_int_args = (method->is_static() ? 1 : 0);
+    _num_fp_args = 0;
+    _stack_offset = 0;
+  }
   virtual ~SignatureHandlerGenerator() {
     _masm = NULL;
   }
