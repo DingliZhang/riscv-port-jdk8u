@@ -39,6 +39,8 @@
 # include "adfiles/adGlobals_x86_64.hpp"
 #elif defined TARGET_ARCH_MODEL_aarch64
 # include "adfiles/adGlobals_aarch64.hpp"
+#elif defined TARGET_ARCH_MODEL_riscv
+# include "adfiles/adGlobals_riscv.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "adfiles/adGlobals_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero
@@ -491,6 +493,9 @@ class frame VALUE_OBJ_CLASS_SPEC {
 #endif
 #ifdef TARGET_ARCH_aarch64
 # include "frame_aarch64.hpp"
+#endif
+#ifdef TARGET_ARCH_riscv
+# include "frame_riscv.hpp"
 #endif
 #ifdef TARGET_ARCH_sparc
 # include "frame_sparc.hpp"
