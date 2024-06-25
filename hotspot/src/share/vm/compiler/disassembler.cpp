@@ -38,6 +38,9 @@
 #ifdef TARGET_ARCH_aarch64
 # include "depChecker_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "depChecker_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "depChecker_sparc.hpp"
 #endif

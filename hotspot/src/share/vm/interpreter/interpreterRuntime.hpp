@@ -168,6 +168,9 @@ class InterpreterRuntime: AllStatic {
 #ifdef TARGET_ARCH_aarch64
 # include "interpreterRT_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "interpreterRT_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "interpreterRT_sparc.hpp"
 #endif
