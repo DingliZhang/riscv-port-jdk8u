@@ -28,7 +28,6 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.hpp"
-#include "metaprogramming/enableIf.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
