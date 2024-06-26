@@ -28,7 +28,6 @@
 #define CPU_RISCV_FRAME_RISCV_INLINE_HPP
 
 #include "code/codeCache.hpp"
-#include "code/vmreg.inline.hpp"
 
 // Inline functions for RISCV frames:
 
