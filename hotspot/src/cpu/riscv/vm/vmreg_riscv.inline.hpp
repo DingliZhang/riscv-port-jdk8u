@@ -26,21 +26,39 @@
 #ifndef CPU_RISCV_VM_VMREG_RISCV_INLINE_HPP
 #define CPU_RISCV_VM_VMREG_RISCV_INLINE_HPP
 
-inline VMReg RegisterImpl::as_VMReg() const {
-  if (this == noreg) {
-    return VMRegImpl::Bad();
-  }
-  return VMRegImpl::as_VMReg(encoding() * RegisterImpl::max_slots_per_register);
+inline VMReg RegisterImpl::as_VMReg() {
+  if( this==noreg ) return VMRegImpl::Bad();
+  return VMRegImpl::as_VMReg(encoding() << 1 );
 }
 
-inline VMReg FloatRegisterImpl::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding() * FloatRegisterImpl::max_slots_per_register) +
-                             ConcreteRegisterImpl::max_gpr);
+inline VMReg FloatRegisterImpl::as_VMReg() {
+  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
 }
 
-inline VMReg VectorRegisterImpl::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding() * VectorRegisterImpl::max_slots_per_register) +
-                             ConcreteRegisterImpl::max_fpr);
+inline bool VMRegImpl::is_Register() {
+  return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
+}
+
+inline bool VMRegImpl::is_FloatRegister() {
+  return value() >= ConcreteRegisterImpl::max_gpr && value() < ConcreteRegisterImpl::max_fpr;
+}
+
+inline Register VMRegImpl::as_Register() {
+
+  assert( is_Register(), "must be");
+  // Yuk
+  return ::as_Register(value() >> 1);
+}
+
+inline FloatRegister VMRegImpl::as_FloatRegister() {
+  assert( is_FloatRegister() && is_even(value()), "must be" );
+  // Yuk
+  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
+}
+
+inline   bool VMRegImpl::is_concrete() {
+  assert(is_reg(), "must be");
+  return is_even(value());
 }
 
 #endif // CPU_RISCV_VM_VMREG_RISCV_INLINE_HPP
