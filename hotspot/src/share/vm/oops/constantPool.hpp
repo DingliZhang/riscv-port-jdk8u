@@ -38,6 +38,9 @@
 #ifdef TARGET_ARCH_aarch64
 # include "bytes_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "bytes_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "bytes_sparc.hpp"
 #endif

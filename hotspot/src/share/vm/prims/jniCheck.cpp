@@ -43,6 +43,9 @@
 #ifdef TARGET_ARCH_aarch64
 # include "jniTypes_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "jniTypes_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "jniTypes_sparc.hpp"
 #endif

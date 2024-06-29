@@ -62,6 +62,10 @@
 # include "nativeInst_aarch64.hpp"
 # include "vmreg_aarch64.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "nativeInst_riscv.hpp"
+# include "vmreg_aarch64.inline.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "nativeInst_sparc.hpp"
 # include "vmreg_sparc.inline.hpp"

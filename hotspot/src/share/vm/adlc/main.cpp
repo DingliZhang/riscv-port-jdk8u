@@ -239,6 +239,11 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "nativeInst_aarch64.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_aarch64.inline.hpp");
 #endif
+#ifdef TARGET_ARCH_riscv
+  AD.addInclude(AD._CPP_file, "assembler_riscv.inline.hpp");
+  AD.addInclude(AD._CPP_file, "nativeInst_riscv.hpp");
+  AD.addInclude(AD._CPP_file, "vmreg_riscv.inline.hpp");
+#endif
 #ifdef TARGET_ARCH_sparc
   AD.addInclude(AD._CPP_file, "nativeInst_sparc.hpp");
   AD.addInclude(AD._CPP_file, "vmreg_sparc.inline.hpp");
