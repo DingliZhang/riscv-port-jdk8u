@@ -460,6 +460,9 @@ class AbstractAssembler : public ResourceObj  {
 #ifdef TARGET_ARCH_aarch64
 # include "assembler_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_riscv
+# include "assembler_riscv.hpp"
+#endif
 #ifdef TARGET_ARCH_sparc
 # include "assembler_sparc.hpp"
 #endif
