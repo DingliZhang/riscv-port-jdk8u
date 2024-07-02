@@ -51,6 +51,9 @@
 #ifdef TARGET_ARCH_MODEL_aarch64
 # include "interp_masm_aarch64.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_riscv
+# include "interp_masm_riscv.hpp"
+#endif
 
 #ifdef CC_INTERP
 

@@ -46,6 +46,8 @@
 # include "adfiles/ad_x86_64.hpp"
 #elif defined TARGET_ARCH_MODEL_aarch64
 # include "adfiles/ad_aarch64.hpp"
+#elif defined TARGET_ARCH_MODEL_riscv
+# include "adfiles/ad_riscv.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "adfiles/ad_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero
