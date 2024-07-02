@@ -359,8 +359,6 @@ class MacroAssembler: public Assembler {
     AnyAny     = LoadStore | StoreLoad // (pred = iorw + succ = iorw)
   };
 
-  void membar(uint32_t order_constraint);
-
   static void membar_mask_to_pred_succ(uint32_t order_constraint, uint32_t& predecessor, uint32_t& successor) {
     predecessor = (order_constraint >> 2) & 0x3;
     successor = order_constraint & 0x3;
@@ -524,12 +522,6 @@ class MacroAssembler: public Assembler {
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
-
-  void bind(Label& L) {
-    Assembler::bind(L);
-    // fences across basic blocks should not be merged
-    code()->clear_last_insn();
-  }
 
   // mv
   inline void mv(Register Rd, int imm64)                { li(Rd, (int64_t)imm64); }
