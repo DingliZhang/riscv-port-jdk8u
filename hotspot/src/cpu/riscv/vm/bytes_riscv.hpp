@@ -29,6 +29,11 @@
 
 class Bytes: AllStatic {
  public:
+  // Returns true if the byte ordering used by Java is different from the native byte ordering
+  // of the underlying machine. For example, this is true for Intel x86, but false for Solaris
+  // on Sparc.
+  static inline bool is_Java_byte_ordering_different(){ return true; }
+
   // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering
   // RISCV needs to check for alignment.
 
