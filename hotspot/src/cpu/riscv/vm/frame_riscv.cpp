@@ -504,6 +504,11 @@ frame frame::sender(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
+// from x86
+void frame::pd_gc_epilog() {
+  // nothing done here now
+}
+
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
@@ -541,8 +546,8 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   }
 
   // validate bci/bcx
-  address bcp = interpreter_frame_bcp();
-  if (m->validate_bci_from_bcp(bcp) < 0) {
+  intptr_t  bcx    = interpreter_frame_bcx();
+  if (m->validate_bci_from_bcx(bcx) < 0) {
     return false;
   }
 
@@ -635,11 +640,11 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_sender_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
-    DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_mdx);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
-    DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_bcx);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
   }
 }
