@@ -49,7 +49,7 @@ typedef VMRegImpl* VMReg;
 class RegisterImpl;
 typedef RegisterImpl* Register;
 
-inline Register as_Register(int encoding) {
+inline const Register as_Register(int encoding) {
   return (Register)(intptr_t) encoding;
 }
 
@@ -66,17 +66,18 @@ class RegisterImpl: public AbstractRegisterImpl {
   };
 
   // derived registers, offsets, and addresses
-  const Register successor() const { return as_Register(encoding() + 1); }
+ Register successor() const { return as_Register(encoding() + 1); }
 
   // construction
   inline friend Register as_Register(int encoding);
 
-  VMReg as_VMReg() const;
+  VMReg as_VMReg();
 
   // accessors
-  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const    { return (intptr_t)this; }
-  bool is_valid() const           { return (unsigned)encoding_nocheck() < number_of_registers; }
+  int   encoding() const                         { assert(is_valid(), "invalid register"); return (intptr_t)this; }
+  int   encoding_nocheck() const                 { return (intptr_t)this; }
+  bool  is_valid() const                         { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
+  bool  has_byte_register() const                { return 0 <= (intptr_t)this && (intptr_t)this < number_of_byte_registers; }
   const char* name() const;
 
   // for rvc
@@ -159,15 +160,15 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
   // construction
   inline friend FloatRegister as_FloatRegister(int encoding);
 
-  VMReg as_VMReg() const;
+  VMReg as_VMReg();
 
   // derived registers, offsets, and addresses
   FloatRegister successor() const { return as_FloatRegister(encoding() + 1); }
 
   // accessors
-  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const    { return (intptr_t)this; }
-  int is_valid() const            { return (unsigned)encoding_nocheck() < number_of_registers; }
+  int   encoding() const                          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
+  int   encoding_nocheck() const                         { return (intptr_t)this; }
+  bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
 
   // for rvc
@@ -242,15 +243,15 @@ class VectorRegisterImpl: public AbstractRegisterImpl {
   // construction
   inline friend VectorRegister as_VectorRegister(int encoding);
 
-  VMReg as_VMReg() const;
+  VMReg as_VMReg();
 
   // derived registers, offsets, and addresses
   VectorRegister successor() const { return as_VectorRegister(encoding() + 1); }
 
   // accessors
-  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const    { return (intptr_t)this; }
-  bool is_valid() const           { return (unsigned)encoding_nocheck() < number_of_registers; }
+  int   encoding() const          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
+  int   encoding_nocheck() const  { return (intptr_t)this; }
+  bool  is_valid() const          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
 
 };

@@ -34,7 +34,7 @@ const int ConcreteRegisterImpl::max_fpr =
     FloatRegisterImpl::number_of_registers * FloatRegisterImpl::max_slots_per_register;
 
 const char* RegisterImpl::name() const {
-  static const char *const names[number_of_registers] = {
+  const char* names[number_of_registers] = {
     "zr", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "fp", "x9",
     "c_rarg0", "c_rarg1", "c_rarg2", "c_rarg3", "c_rarg4", "c_rarg5", "c_rarg6", "c_rarg7",
     "x18", "x19", "esp", "xdispatch", "xbcp", "xthread", "xlocals",
@@ -44,7 +44,7 @@ const char* RegisterImpl::name() const {
 }
 
 const char* FloatRegisterImpl::name() const {
-  static const char *const names[number_of_registers] = {
+  sconst char* names[number_of_registers] = {
     "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
     "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
     "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
@@ -54,7 +54,7 @@ const char* FloatRegisterImpl::name() const {
 }
 
 const char* VectorRegisterImpl::name() const {
-  static const char *const names[number_of_registers] = {
+  const char* names[number_of_registers] = {
     "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
     "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
     "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
