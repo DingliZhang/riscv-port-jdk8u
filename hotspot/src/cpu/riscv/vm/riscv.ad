@@ -693,7 +693,6 @@ source_hpp %{
 
 #include "memory/cardTableModRefBS.hpp"
 #include "opto/addnode.hpp"
-#include "opto/convertnode.hpp"
 
 extern RegMask _ANY_REG32_mask;
 extern RegMask _ANY_REG_mask;
