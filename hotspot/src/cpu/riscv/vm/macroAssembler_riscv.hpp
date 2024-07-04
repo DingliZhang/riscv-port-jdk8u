@@ -214,7 +214,6 @@ class MacroAssembler: public Assembler {
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
 
-  void load_mirror(Register dst, Register method, Register tmp = x15);
   void load_heap_oop(Register dst, Address src);
   void load_heap_oop_not_null(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);

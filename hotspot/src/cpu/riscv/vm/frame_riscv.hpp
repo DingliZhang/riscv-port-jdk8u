@@ -119,8 +119,6 @@
     interpreter_frame_method_offset                  = interpreter_frame_last_sp_offset - 1,
     interpreter_frame_mdx_offset                     = interpreter_frame_method_offset - 1,
     interpreter_frame_cache_offset                   = interpreter_frame_mdx_offset - 1,
-    interpreter_frame_mirror_offset                  = interpreter_frame_padding_offset - 1,
-    interpreter_frame_cache_offset                   = interpreter_frame_mirror_offset - 1,
     interpreter_frame_locals_offset                  = interpreter_frame_cache_offset - 1,
     interpreter_frame_bcx_offset                     = interpreter_frame_locals_offset - 1,
     interpreter_frame_initial_sp_offset              = interpreter_frame_bcx_offset - 1,

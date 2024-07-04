@@ -1717,15 +1717,6 @@ SkipIfEqual::~SkipIfEqual() {
   _masm = NULL;
 }
 
-void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {
-  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
-  ld(dst, Address(xmethod, Method::const_offset()));
-  ld(dst, Address(dst, ConstMethod::constants_offset()));
-  ld(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
-  ld(dst, Address(dst, mirror_offset));
-  resolve_oop_handle(dst, tmp);
-}
-
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
   assert_different_registers(result, tmp);
