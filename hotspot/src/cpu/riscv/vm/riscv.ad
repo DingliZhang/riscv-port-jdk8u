@@ -692,7 +692,7 @@ definitions %{
 source_hpp %{
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 #include "opto/convertnode.hpp"
@@ -2654,8 +2654,8 @@ operand immPollPage()
 operand immByteMapBase()
 %{
   // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-    (jbyte*)n->get_ptr() == ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base);
+  predicate(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableModRef) &&
+            (jbyte*)n->get_ptr() == ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);
