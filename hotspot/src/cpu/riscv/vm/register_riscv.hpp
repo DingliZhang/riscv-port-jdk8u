@@ -57,6 +57,7 @@ class RegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
     number_of_registers      = 32,
+    number_of_byte_registers = 32,
     max_slots_per_register   = 2,
 
     // integer registers x8 - x15 and floating-point registers f8 - f15 are allocatable

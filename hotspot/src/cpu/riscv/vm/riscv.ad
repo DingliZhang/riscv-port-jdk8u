@@ -806,8 +806,6 @@ bool is_CAS(int opcode, bool maybe_volatile)
     case Op_CompareAndSwapL:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
-    case Op_CompareAndSwapB:
-    case Op_CompareAndSwapS:
     case Op_GetAndSetI:
     case Op_GetAndSetL:
     case Op_GetAndSetP:
@@ -815,15 +813,6 @@ bool is_CAS(int opcode, bool maybe_volatile)
     case Op_GetAndAddI:
     case Op_GetAndAddL:
       return true;
-    case Op_CompareAndExchangeI:
-    case Op_CompareAndExchangeN:
-    case Op_CompareAndExchangeB:
-    case Op_CompareAndExchangeS:
-    case Op_CompareAndExchangeL:
-    case Op_CompareAndExchangeP:
-    case Op_WeakCompareAndSwapB:
-    case Op_WeakCompareAndSwapS:
-      return maybe_volatile;
     default:
       return false;
   }
