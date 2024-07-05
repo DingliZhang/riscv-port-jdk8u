@@ -49,7 +49,7 @@ typedef VMRegImpl* VMReg;
 class RegisterImpl;
 typedef RegisterImpl* Register;
 
-inline const Register as_Register(int encoding) {
+inline Register as_Register(int encoding) {
   return (Register)(intptr_t) encoding;
 }
 
