@@ -1462,12 +1462,6 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-// Identify extra cases that we might want to provide match rules for vector nodes and
-// other intrinsics guarded with vector length (vlen).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
-  return false;
-}
-
 const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
