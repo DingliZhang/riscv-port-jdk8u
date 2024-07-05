@@ -634,8 +634,6 @@ class MacroAssembler: public Assembler {
   void build_frame(int framesize);
   void remove_frame(int framesize);
 
-  void reserved_stack_check();
-
   virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
                                                 Register tmp,
                                                 int offset);

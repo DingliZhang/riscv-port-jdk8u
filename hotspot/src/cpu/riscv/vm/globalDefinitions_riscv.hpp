@@ -39,8 +39,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
-#define SUPPORT_RESERVED_STACK_AREA
-
 #define THREAD_LOCAL_POLL
 
 #endif // CPU_RISCV_GLOBALDEFINITIONS_RISCV_HPP

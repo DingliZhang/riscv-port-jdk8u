@@ -2694,31 +2694,6 @@ void MacroAssembler::remove_frame(int framesize) {
   add(sp, sp, framesize);
 }
 
-void MacroAssembler::reserved_stack_check() {
-    // testing if reserved zone needs to be enabled
-    Label no_reserved_zone_enabling;
-
-    ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
-    bltu(sp, t0, no_reserved_zone_enabling);
-
-    enter();   // RA and FP are live.
-    mv(c_rarg0, xthread);
-    int32_t offset = 0;
-    la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone)), offset);
-    jalr(x1, t0, offset);
-    leave();
-
-    // We have already removed our own frame.
-    // throw_delayed_StackOverflowError will think that it's been
-    // called by our caller.
-    offset = 0;
-    la_patchable(t0, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()), offset);
-    jalr(x0, t0, offset);
-    should_not_reach_here();
-
-    bind(no_reserved_zone_enabling);
-}
-
 void MacroAssembler::atomic_incw(Register counter_addr, Register tmp) {
   Label retry_load;
   bind(retry_load);
