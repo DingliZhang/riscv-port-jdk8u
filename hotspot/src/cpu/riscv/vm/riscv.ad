@@ -914,7 +914,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 {
   // to make sure the address of jal 4-byte aligned.
-  return align_up(current_offset, alignment_required()) - current_offset;
+  return round_to(current_offset, alignment_required()) - current_offset;
 }
 
 // With RVC a call instruction may get 2-byte aligned.
@@ -929,7 +929,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   const int movptr_size = 6 * NativeInstruction::instruction_size;
   current_offset += movptr_size;
   // to make sure the address of jal 4-byte aligned.
-  return align_up(current_offset, alignment_required()) - current_offset;
+  return round_to(current_offset, alignment_required()) - current_offset;
 }
 
 // Indicate if the safepoint node needs the polling page as an input
@@ -2346,7 +2346,7 @@ frame %{
   // ppc port uses 0 but we definitely need to allow for fixed_slots
   // which folds in the space used for monitors
   return_addr(STACK - 2 +
-              align_up((Compile::current()->in_preserve_stack_slots() +
+              round_to((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
 
