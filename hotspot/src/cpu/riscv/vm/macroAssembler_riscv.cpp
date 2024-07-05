@@ -3030,8 +3030,8 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   return pc();
 }
 
-address MacroAssembler::ic_call(address entry, jint method_index) {
-  RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
+address MacroAssembler::ic_call(address entry) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc());
   movptr(t1, (address)Universe::non_oop_word());
   assert_cond(entry != NULL);
   return trampoline_call(Address(entry, rh));
