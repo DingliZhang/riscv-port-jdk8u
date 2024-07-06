@@ -30,8 +30,6 @@
 #include "interp_masm_riscv.hpp"
 #include "register_riscv.hpp"
 
-REGISTER_DEFINITION(Register, noreg);
-
 REGISTER_DEFINITION(Register, x0);
 REGISTER_DEFINITION(Register, x1);
 REGISTER_DEFINITION(Register, x2);
@@ -64,8 +62,6 @@ REGISTER_DEFINITION(Register, x28);
 REGISTER_DEFINITION(Register, x29);
 REGISTER_DEFINITION(Register, x30);
 REGISTER_DEFINITION(Register, x31);
-
-REGISTER_DEFINITION(FloatRegister, fnoreg);
 
 REGISTER_DEFINITION(FloatRegister, f0);
 REGISTER_DEFINITION(FloatRegister, f1);

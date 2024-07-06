@@ -1446,6 +1446,9 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   switch (opcode) {
+    case Op_StrComp:
+      if (CompactStrings)  return false;
+      break;
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;
@@ -8796,64 +8799,12 @@ instruct string_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ sraiw($cnt1$$Register, $cnt1$$Register, 1);
+    __ sraiw($cnt2$$Register, $cnt2$$Register, 1);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                      StrIntrinsicNode::UU);
+                      $tmp1$$Register);
   %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                         iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
-%{
-  predicate(((StrCompNode *)n)->encoding() == StrIntrinsicNode::LL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
-  effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareL" %}
-  ins_encode %{
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                      StrIntrinsicNode::LL);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
-%{
-  predicate(((StrCompNode *)n)->encoding() == StrIntrinsicNode::UL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
-  effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{"String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareUL" %}
-  ins_encode %{
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                      StrIntrinsicNode::UL);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3,
-                          rFlagsReg cr)
-%{
-  predicate(((StrCompNode *)n)->encoding() == StrIntrinsicNode::LU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
-  effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareLU" %}
-  ins_encode %{
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                      StrIntrinsicNode::LU);
-  %}
-  ins_pipe(pipe_class_memory);
 %}
 
 // clearing of an array

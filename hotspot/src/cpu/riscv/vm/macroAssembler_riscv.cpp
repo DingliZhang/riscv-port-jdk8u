@@ -59,6 +59,12 @@
 #endif
 #define BIND(label) bind(label); __ BLOCK_COMMENT(#label ":")
 
+
+// added to make this compile
+
+REGISTER_DEFINITION(Register, noreg);
+
+
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   if (c_rarg0 != arg) {
     assert_cond(masm != NULL);
@@ -4838,40 +4844,15 @@ void MacroAssembler::string_indexof_linearscan(Register haystack, Register needl
 
 // Compare strings.
 void MacroAssembler::string_compare(Register str1, Register str2,
-                                       Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
-                                       Register tmp3, int ae)
+                                       Register cnt1, Register cnt2, Register result, Register tmp1)
 {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
           DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
           SHORT_LOOP_START, TAIL_CHECK, L;
 
   const int STUB_THRESHOLD = 64 + 8;
-  bool isLL = ae == StrIntrinsicNode::LL;
-  bool isLU = ae == StrIntrinsicNode::LU;
-  bool isUL = ae == StrIntrinsicNode::UL;
-
-  bool str1_isL = isLL || isLU;
-  bool str2_isL = isLL || isUL;
-
-  // for L strings, 1 byte for 1 character
-  // for U strings, 2 bytes for 1 character
-  int str1_chr_size = str1_isL ? 1 : 2;
-  int str2_chr_size = str2_isL ? 1 : 2;
-  int minCharsInWord = isLL ? wordSize : wordSize / 2;
-
-  load_chr_insn str1_load_chr = str1_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
-  load_chr_insn str2_load_chr = str2_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
 
   BLOCK_COMMENT("string_compare {");
-
-  // Bizzarely, the counts are passed in bytes, regardless of whether they
-  // are L or U strings, however the result is always in characters.
-  if (!str1_isL) {
-    sraiw(cnt1, cnt1, 1);
-  }
-  if (!str2_isL) {
-    sraiw(cnt2, cnt2, 1);
-  }
 
   // Compute the minimum of the string lengths and save the difference in result.
   sub(result, cnt1, cnt2);
@@ -4880,205 +4861,46 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   bind(L);
 
   // A very short string
-  li(t0, minCharsInWord);
+  li(t0, wordSize / 2);
   ble(cnt2, t0, SHORT_STRING);
 
   // Compare longwords
-  // load first parts of strings and finish initialization while loading
-  {
-    if (str1_isL == str2_isL) { // LL or UU
-      // load 8 bytes once to compare
-      ld(tmp1, Address(str1));
-      beq(str1, str2, DONE);
-      ld(tmp2, Address(str2));
-      li(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, STUB);
-      sub(cnt2, cnt2, minCharsInWord);
-      beqz(cnt2, TAIL_CHECK);
-      // convert cnt2 from characters to bytes
-      if (!str1_isL) {
-        slli(cnt2, cnt2, 1);
-      }
-      add(str2, str2, cnt2);
-      add(str1, str1, cnt2);
-      sub(cnt2, zr, cnt2);
-    } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
-      li(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, STUB);
-      addi(cnt2, cnt2, -4);
-      add(str1, str1, cnt2);
-      sub(cnt1, zr, cnt2);
-      slli(cnt2, cnt2, 1);
-      add(str2, str2, cnt2);
-      inflate_lo32(tmp3, tmp1);
-      mv(tmp1, tmp3);
-      sub(cnt2, zr, cnt2);
-      addi(cnt1, cnt1, 4);
-    } else { // UL case
-      ld(tmp1, Address(str1));
-      lwu(tmp2, Address(str2));
-      li(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, STUB);
-      addi(cnt2, cnt2, -4);
-      slli(t0, cnt2, 1);
-      sub(cnt1, zr, t0);
-      add(str1, str1, t0);
-      add(str2, str2, cnt2);
-      inflate_lo32(tmp3, tmp2);
-      mv(tmp2, tmp3);
-      sub(cnt2, zr, cnt2);
-      addi(cnt1, cnt1, 8);
-    }
-    addi(cnt2, cnt2, isUL ? 4 : 8);
-    bgez(cnt2, TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
+  addi(cnt2, cnt2, -4);
+  add(str1, str1, cnt2);
+  sub(cnt1, zr, cnt2);
+  slli(cnt2, cnt2, 1);
+  add(str2, str2, cnt2);
+  sub(cnt2, zr, cnt2);
+  addi(cnt1, cnt1, 4);
 
-    // main loop
-    bind(NEXT_WORD);
-    if (str1_isL == str2_isL) { // LL or UU
-      add(t0, str1, cnt2);
-      ld(tmp1, Address(t0));
-      add(t0, str2, cnt2);
-      ld(tmp2, Address(t0));
-      addi(cnt2, cnt2, 8);
-    } else if (isLU) { // LU case
-      add(t0, str1, cnt1);
-      lwu(tmp1, Address(t0));
-      add(t0, str2, cnt2);
-      ld(tmp2, Address(t0));
-      addi(cnt1, cnt1, 4);
-      inflate_lo32(tmp3, tmp1);
-      mv(tmp1, tmp3);
-      addi(cnt2, cnt2, 8);
-    } else { // UL case
-      add(t0, str2, cnt2);
-      lwu(tmp2, Address(t0));
-      add(t0, str1, cnt1);
-      ld(tmp1, Address(t0));
-      inflate_lo32(tmp3, tmp2);
-      mv(tmp2, tmp3);
-      addi(cnt1, cnt1, 8);
-      addi(cnt2, cnt2, 4);
-    }
-    bgez(cnt2, TAIL);
+  bind(NEXT_WORD);
+  add(t0, str1, cnt2);
+  ld(result, Address(t0));
+  add(t0, str2, cnt2);
+  ld(cnt1, Address(t0));
+  addi(cnt2, cnt2, wordSize);
 
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, NEXT_WORD);
-    j(DIFFERENCE);
-    bind(TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
-    // Last longword.  In the case where length == 4 we compare the
-    // same longword twice, but that's still faster than another
-    // conditional branch.
-    if (str1_isL == str2_isL) { // LL or UU
-      ld(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
-    } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
-      inflate_lo32(tmp3, tmp1);
-      mv(tmp1, tmp3);
-    } else { // UL case
-      lwu(tmp2, Address(str2));
-      ld(tmp1, Address(str1));
-      inflate_lo32(tmp3, tmp2);
-      mv(tmp2, tmp3);
-    }
-    bind(TAIL_CHECK);
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, DONE);
+  xorr(t0, tmp1, tmp2);
+  beqz(t0, NEXT_WORD);
+  j(DIFFERENCE);
+  xorr(t0, tmp1, tmp2);
+  bnez(t0, DIFFERENCE);
 
-    // Find the first different characters in the longwords and
-    // compute their difference.
-    bind(DIFFERENCE);
-    ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
-    srl(tmp1, tmp1, result);
-    srl(tmp2, tmp2, result);
-    if (isLL) {
-      andi(tmp1, tmp1, 0xFF);
-      andi(tmp2, tmp2, 0xFF);
-    } else {
-      andi(tmp1, tmp1, 0xFFFF);
-      andi(tmp2, tmp2, 0xFFFF);
-    }
-    sub(result, tmp1, tmp2);
-    j(DONE);
-  }
+  ld(result, Address(str1));
+  ld(cnt1, Address(str2));
+  xorr(t0, result, cnt1);
+  beqz(t0, LENGTH_DIFF);
 
-  bind(STUB);
-  RuntimeAddress stub = NULL;
-  switch (ae) {
-    case StrIntrinsicNode::LL:
-      stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_LL());
-      break;
-    case StrIntrinsicNode::UU:
-      stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_UU());
-      break;
-    case StrIntrinsicNode::LU:
-      stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_LU());
-      break;
-    case StrIntrinsicNode::UL:
-      stub = RuntimeAddress(StubRoutines::riscv::compare_long_string_UL());
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-  assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-  trampoline_call(stub);
-  j(DONE);
-
-  bind(SHORT_STRING);
-  // Is the minimum length zero?
-  beqz(cnt2, DONE);
-  // arrange code to do most branches while loading and loading next characters
-  // while comparing previous
-  (this->*str1_load_chr)(tmp1, Address(str1), t0);
-  addi(str1, str1, str1_chr_size);
-  addi(cnt2, cnt2, -1);
-  beqz(cnt2, SHORT_LAST_INIT);
-  (this->*str2_load_chr)(cnt1, Address(str2), t0);
-  addi(str2, str2, str2_chr_size);
-  j(SHORT_LOOP_START);
-  bind(SHORT_LOOP);
-  addi(cnt2, cnt2, -1);
-  beqz(cnt2, SHORT_LAST);
-  bind(SHORT_LOOP_START);
-  (this->*str1_load_chr)(tmp2, Address(str1), t0);
-  addi(str1, str1, str1_chr_size);
-  (this->*str2_load_chr)(t0, Address(str2), t0);
-  addi(str2, str2, str2_chr_size);
-  bne(tmp1, cnt1, SHORT_LOOP_TAIL);
-  addi(cnt2, cnt2, -1);
-  beqz(cnt2, SHORT_LAST2);
-  (this->*str1_load_chr)(tmp1, Address(str1), t0);
-  addi(str1, str1, str1_chr_size);
-  (this->*str2_load_chr)(cnt1, Address(str2), t0);
-  addi(str2, str2, str2_chr_size);
-  beq(tmp2, t0, SHORT_LOOP);
-  sub(result, tmp2, t0);
-  j(DONE);
-  bind(SHORT_LOOP_TAIL);
+  // Find the first different characters in the longwords and
+  // compute their difference.
+  bind(DIFFERENCE);
+  ctzc_bit(result, t0, -16); // count zero from lsb to msb
+  srl(tmp1, tmp1, result);
+  srl(cnt1, cnt1, result);
+  andi(tmp1, tmp1, 0xFFFF);
+  andi(cnt1, cnt1, 0xFFFF);
   sub(result, tmp1, cnt1);
   j(DONE);
-  bind(SHORT_LAST2);
-  beq(tmp2, t0, DONE);
-  sub(result, tmp2, t0);
-
-  j(DONE);
-  bind(SHORT_LAST_INIT);
-  (this->*str2_load_chr)(cnt1, Address(str2), t0);
-  addi(str2, str2, str2_chr_size);
-  bind(SHORT_LAST);
-  beq(tmp1, cnt1, DONE);
-  sub(result, tmp1, cnt1);
-
-  bind(DONE);
-
-  BLOCK_COMMENT("} string_compare");
 }
 
 void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,

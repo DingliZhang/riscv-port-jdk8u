@@ -838,8 +838,7 @@ private:
 public:
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      Register tmp1, Register tmp2, Register tmp3,
-                      int ae);
+                      Register tmp1);
 
   void string_indexof_char_short(Register str1, Register cnt1,
                                  Register ch, Register result,
