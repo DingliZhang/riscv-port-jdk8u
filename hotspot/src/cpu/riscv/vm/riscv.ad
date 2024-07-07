@@ -1446,9 +1446,6 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   switch (opcode) {
-    case Op_StrComp:
-      if (CompactStrings)  return false;
-      break;
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;
