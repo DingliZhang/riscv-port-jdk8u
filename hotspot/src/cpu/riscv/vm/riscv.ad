@@ -9057,9 +9057,7 @@ instruct ShouldNotReachHere() %{
 
   ins_encode %{
     Assembler::CompressibleRegion cr(&_masm);
-    if (is_reachable()) {
-      __ halt();
-    }
+    __ halt();
   %}
 
   ins_pipe(pipe_class_default);
