@@ -33,7 +33,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 int AbstractAssembler::code_fill_byte() {
