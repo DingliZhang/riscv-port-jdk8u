@@ -55,15 +55,15 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
 }
 
 Register InterpreterRuntime::SignatureHandlerGenerator::next_gpr() {
-  if (_num_reg_int_args < Argument::n_int_register_parameters_c - 1) {
-    return g_INTArgReg[++_num_reg_int_args];
+  if (_num_int_args < Argument::n_int_register_parameters_c - 1) {
+    return g_INTArgReg[++_num_int_args];
   }
   return noreg;
 }
 
 FloatRegister InterpreterRuntime::SignatureHandlerGenerator::next_fpr() {
-  if (_num_reg_fp_args < Argument::n_float_register_parameters_c) {
-    return g_FPArgReg[_num_reg_fp_args++];
+  if (_num_fp_args < Argument::n_float_register_parameters_c) {
+    return g_FPArgReg[_num_fp_args++];
   } else {
     return fnoreg;
   }
@@ -78,8 +78,8 @@ int InterpreterRuntime::SignatureHandlerGenerator::next_stack_offset() {
 InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
   const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
   _masm = new MacroAssembler(buffer); // allocate on resourse area by default
-  _num_reg_int_args = (method->is_static() ? 1 : 0);
-  _num_reg_fp_args = 0;
+  _num_int_args = (method->is_static() ? 1 : 0);
+  _num_fp_args = 0;
   _stack_offset = 0;
 }
 
@@ -141,7 +141,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   } else if (reg != noreg) {
       // c_rarg2-c_rarg7
       __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
-      __ mv(reg, zr); //_num_reg_int_args:c_rarg -> 1:c_rarg2,  2:c_rarg3...
+      __ mv(reg, zr); //_num_int_args:c_rarg -> 1:c_rarg2,  2:c_rarg3...
       __ ld(temp(), x10);
       Label L;
       __ beqz(temp(), L);
@@ -185,8 +185,8 @@ class SlowSignatureHandler
   intptr_t* _int_args;
   intptr_t* _fp_args;
   intptr_t* _fp_identifiers;
-  unsigned int _num_reg_int_args;
-  unsigned int _num_reg_fp_args;
+  unsigned int _num_int_args;
+  unsigned int _num_fp_args;
 
   intptr_t* single_slot_addr() {
     intptr_t* from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
@@ -201,17 +201,17 @@ class SlowSignatureHandler
   }
 
   int pass_gpr(intptr_t value) {
-    if (_num_reg_int_args < Argument::n_int_register_parameters_c - 1) {
+    if (_num_int_args < Argument::n_int_register_parameters_c - 1) {
       *_int_args++ = value;
-      return _num_reg_int_args++;
+      return _num_int_args++;
     }
     return -1;
   }
 
   int pass_fpr(intptr_t value) {
-    if (_num_reg_fp_args < Argument::n_float_register_parameters_c) {
+    if (_num_fp_args < Argument::n_float_register_parameters_c) {
       *_fp_args++ = value;
-      return _num_reg_fp_args++;
+      return _num_fp_args++;
     }
     return -1;
   }
@@ -272,8 +272,8 @@ class SlowSignatureHandler
     _fp_args  = to - 8;
     _fp_identifiers = to - 9;
     *(int*) _fp_identifiers = 0;
-    _num_reg_int_args = (method->is_static() ? 1 : 0);
-    _num_reg_fp_args = 0;
+    _num_int_args = (method->is_static() ? 1 : 0);
+    _num_fp_args = 0;
   }
 
   ~SlowSignatureHandler()
