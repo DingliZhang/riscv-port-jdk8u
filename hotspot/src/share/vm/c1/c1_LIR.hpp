@@ -542,7 +542,7 @@ class LIR_Address: public LIR_OprPtr {
      , _type(type)
      , _disp(0) { verify(); }
 
-#if defined(X86) || defined(ARM) || defined(AARCH64)
+#if defined(X86) || defined(ARM) || defined(AARCH64) || defined(RISCV64)
   LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, intx disp, BasicType type):
        _base(base)
      , _index(index)
@@ -625,7 +625,7 @@ class LIR_OprFact: public AllStatic {
                                                                              LIR_OprDesc::double_type          |
                                                                              LIR_OprDesc::fpu_register         |
                                                                              LIR_OprDesc::double_size); }
-#elif defined(X86) || defined(AARCH64) || (RISCV64)
+#elif defined(X86) || defined(AARCH64) || defined(RISCV64)
   static LIR_Opr double_fpu(int reg)            { return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
                                                                              (reg  << LIR_OprDesc::reg2_shift) |
                                                                              LIR_OprDesc::double_type          |

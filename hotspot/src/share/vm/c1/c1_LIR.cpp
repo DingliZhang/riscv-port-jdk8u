@@ -67,7 +67,7 @@ FloatRegister LIR_OprDesc::as_double_reg() const {
 
 #endif
 
-#if defined(ARM) || defined(AARCH64)
+#if defined(ARM) || defined(AARCH64) || defined(RISCV64)
 
 FloatRegister LIR_OprDesc::as_float_reg() const {
   return as_FloatRegister(fpu_regnr());
@@ -149,7 +149,7 @@ void LIR_Address::verify0() const {
 #endif
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
-#ifndef AARCH64
+#if !defined(AARCH64) || !defined(RISCV64)
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
 #else
   assert(index()->is_illegal() || index()->is_double_cpu() || index()->is_single_cpu(), "wrong index operand");
