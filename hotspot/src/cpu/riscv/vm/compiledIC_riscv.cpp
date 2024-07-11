@@ -85,13 +85,13 @@ int CompiledStaticCall::reloc_to_interp_stub() {
   return 4; // 3 in emit_to_interp_stub + 1 in emit_call
 }
 
-void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
-  address stub = find_stub(false /* is_aot */);
+void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) {
+  address stub = find_stub();
   guarantee(stub != NULL, "stub not found");
 
   if (TraceICs) {
     ResourceMark rm;
-    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
+    tty->print_cr("CompiledStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
                   p2i(instruction_address()),
                   callee->name_and_sig_as_C_string());
   }
@@ -117,7 +117,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   set_destination_mt_safe(stub);
 }
 
-void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
   // Reset stub.
   address stub = static_stub->addr();
@@ -132,13 +132,13 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
 // Non-product mode code
 #ifndef PRODUCT
 
-void CompiledDirectStaticCall::verify() {
+void CompiledStaticCall::verify() {
   // Verify call.
-  _call->verify();
+  NativeCall::verify();
   _call->verify_alignment();
 
   // Verify stub.
-  address stub = find_stub(false /* is_aot */);
+  address stub = find_stub();
   assert(stub != NULL, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
