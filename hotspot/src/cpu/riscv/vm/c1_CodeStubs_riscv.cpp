@@ -51,14 +51,11 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ j(_continuation);
 }
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(NULL), _throw_index_out_of_bounds_exception(true) {
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
+                               bool throw_index_out_of_bounds_exception)
+  : _throw_index_out_of_bounds_exception(throw_index_out_of_bounds_exception)
+  , _index(index)
+{
   assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
@@ -83,8 +80,6 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   if (_throw_index_out_of_bounds_exception) {
     stub_id = Runtime1::throw_index_exception_id;
   } else {
-    assert(_array != NULL, "sanity");
-    __ mv(t1, _array->as_pointer_register());
     stub_id = Runtime1::throw_range_check_failed_id;
   }
   int32_t off = 0;

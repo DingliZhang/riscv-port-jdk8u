@@ -734,7 +734,6 @@ void TemplateTable::index_check(Register array, Register index)
   Label ok;
   __ addw(index, index, zr);
   __ bltu(index, length, ok);
-  __ mv(x13, array);
   __ mv(t0, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
   __ jr(t0);
   __ bind(ok);
