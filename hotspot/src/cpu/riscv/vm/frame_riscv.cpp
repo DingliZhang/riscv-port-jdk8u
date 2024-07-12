@@ -378,8 +378,7 @@ void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
 
   assert_cond(nm != NULL);
   address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
+  assert(nm->insts_contains(original_pc), "original PC must be in nmethod");
 }
 #endif
 
