@@ -1064,8 +1064,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         StubFrame f(sasm, "deoptimize", dont_gc_arguments);
         OopMap* oop_map = save_live_registers(sasm);
         assert_cond(oop_map != NULL);
-        f.load_argument(0, c_rarg1);
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize), c_rarg1);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize));
 
         oop_maps = new OopMapSet();
         assert_cond(oop_maps != NULL);
