@@ -25,13 +25,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 

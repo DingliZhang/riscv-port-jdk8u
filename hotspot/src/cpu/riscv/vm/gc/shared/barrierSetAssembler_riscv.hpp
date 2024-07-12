@@ -27,7 +27,6 @@
 #define CPU_RISCV_GC_SHARED_BARRIERSETASSEMBLER_RISCV_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 
