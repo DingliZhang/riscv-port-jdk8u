@@ -109,8 +109,6 @@ using MacroAssembler::null_check;
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
 
-  void load_parameter(int offset_in_words, Register reg);
-
   void inline_cache_check(Register receiver, Register iCache, Label &L);
 
   static const int c1_double_branch_mask = 1 << 3; // depend on c1_float_cond_branch

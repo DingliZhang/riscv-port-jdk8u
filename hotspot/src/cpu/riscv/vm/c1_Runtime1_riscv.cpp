@@ -45,6 +45,11 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_riscv.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif
 
 
 // Implementation of StubAssembler
@@ -177,32 +182,29 @@ class StubFrame: public StackObj {
   ~StubFrame();
 };;
 
-void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
-  set_info(name, must_gc_arguments);
-  enter();
-}
-
-void StubAssembler::epilogue() {
-  leave();
-  ret();
-}
-
 #define __ _sasm->
 
 StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments) {
   _sasm = sasm;
-  __ prologue(name, must_gc_arguments);
+  __ set_info(name, must_gc_arguments);
+  __ enter();
 }
 
 // load parameters that were stored with LIR_Assembler::store_parameter
 // Note: offsets for store_parameter and load_argument must match
 void StubFrame::load_argument(int offset_in_words, Register reg) {
-  __ load_parameter(offset_in_words, reg);
+  //  fp + -2: link
+  //     + -1: return address
+  //     +  0: argument with offset 0
+  //     +  1: argument with offset 1
+  //     +  2: ...
+  __ ld(reg, Address(fp, offset_in_words * BytesPerWord));
 }
 
 
 StubFrame::~StubFrame() {
-  __ epilogue();
+  __ leave();
+  __ ret();
   _sasm = NULL;
 }
 
@@ -1155,6 +1157,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), true);
       }
       break;
+
+#if INCLUDE_ALL_GCS
+//TODO-RISCV64
+#endif
 
     case predicate_failed_trap_id:
       {

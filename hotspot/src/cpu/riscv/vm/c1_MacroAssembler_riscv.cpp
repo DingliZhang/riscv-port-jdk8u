@@ -337,15 +337,6 @@ void C1_MacroAssembler::remove_frame(int framesize) {
 void C1_MacroAssembler::verified_entry() {
 }
 
-void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
-  //  fp + -2: link
-  //     + -1: return address
-  //     +  0: argument with offset 0
-  //     +  1: argument with offset 1
-  //     +  2: ...
-  ld(reg, Address(fp, offset_in_words * BytesPerWord));
-}
-
 #ifndef PRODUCT
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
