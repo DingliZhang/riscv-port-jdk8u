@@ -183,11 +183,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(sp, x30);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dsin() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
@@ -197,11 +193,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(sp, x30);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dcos() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
@@ -211,11 +203,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(sp, x30);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dtan() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
@@ -225,11 +213,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(sp, x30);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dlog() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
@@ -239,11 +223,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(sp, x30);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dlog10() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
@@ -253,11 +233,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ mv(sp, x30);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
-      if (StubRoutines::dexp() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
@@ -268,11 +244,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
       __ fld(f11, Address(esp));
       __ mv(sp, x30);
-      if (StubRoutines::dpow() == NULL) {
-        fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
-      } else {
-        fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
-      }
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
       __ mv(t0, fn);
       __ jalr(t0);
       break;
