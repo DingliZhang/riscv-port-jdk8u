@@ -955,10 +955,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   ShouldNotReachHere();
 }
 
-void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  ShouldNotReachHere();
-}
-
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   fatal("vectorizedMismatch intrinsic is not implemented on this platform");
 }
