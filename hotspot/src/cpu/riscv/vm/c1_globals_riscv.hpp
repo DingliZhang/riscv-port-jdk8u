@@ -68,4 +68,6 @@ define_pd_global(bool, OptimizeSinglePrecision,      true );
 define_pd_global(bool, CSEArrayLength,               false);
 define_pd_global(bool, TwoOperandLIRForm,            false);
 
+define_pd_global(intx, SafepointPollOffset,          0    );
+
 #endif // CPU_RISCV_C1_GLOBALS_RISCV_HPP
