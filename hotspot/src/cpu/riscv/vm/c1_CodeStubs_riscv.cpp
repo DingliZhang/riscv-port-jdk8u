@@ -25,13 +25,13 @@
  */
 
 #include "precompiled.hpp"
+#include "c1/c1_CodeStubs.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
-#include "classfile/javaClasses.hpp"
 #include "nativeInst_riscv.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_riscv.inline.hpp"
@@ -333,7 +333,6 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ j(_continuation);
 }
 
-#undef __
 
 /////////////////////////////////////////////////////////////////////////////
 #if INCLUDE_ALL_GCS
@@ -371,3 +370,5 @@ void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
 
 #endif // INCLUDE_ALL_GCS
 /////////////////////////////////////////////////////////////////////////////
+
+#undef __
