@@ -331,6 +331,9 @@ class CompiledStaticCall: public NativeCall {
 #else
   static address emit_to_interp_stub(CodeBuffer &cbuf);
 #endif
+#if defined(RISCV64) && !defined(ZERO)
+  static int to_trampoline_stub_size();
+#endif
   static int to_interp_stub_size();
   static int reloc_to_interp_stub();
 
