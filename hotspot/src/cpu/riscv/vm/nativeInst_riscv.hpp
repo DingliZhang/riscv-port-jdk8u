@@ -398,6 +398,13 @@ inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
 
 // RISCV should not use C1 runtime patching, so just leave NativeMovRegMem Unimplemented.
 class NativeMovRegMem: public NativeInstruction {
+  enum RISCV_specific_constants {
+    instruction_size            =    4,
+    instruction_offset          =    0,
+    data_offset                 =    0,
+    next_instruction_offset     =    4
+  };
+
  public:
   int instruction_start() const {
     Unimplemented();
@@ -428,8 +435,9 @@ class NativeMovRegMem: public NativeInstruction {
 };
 
 inline NativeMovRegMem* nativeMovRegMem_at (address addr) {
-  Unimplemented();
-  return NULL;
+  NativeMovRegMem* test = (NativeMovRegMem*)(addr - NativeMovRegMem::instruction_offset);
+  DEBUG_ONLY(test->verify());
+  return test;
 }
 
 class NativeJump: public NativeInstruction {
