@@ -46,9 +46,9 @@
 #include "runtime/vframeArray.hpp"
 #include "vmreg_riscv.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/g1CardTable.hpp"
+#include "gc_implementation/g1/g1ThreadLocalData.hpp"
 #endif
 
 

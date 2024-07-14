@@ -36,7 +36,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_riscv.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 
