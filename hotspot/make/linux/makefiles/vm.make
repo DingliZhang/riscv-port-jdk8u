@@ -123,6 +123,9 @@ CFLAGS_WARN/jni.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 ifeq ($(filter $(DEBUG_LEVEL), slowdebug fastdebug), $(DEBUG_LEVEL))
   CFLAGS_WARN/classFileParser.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 endif
+ifeq ($(DEBUG_LEVEL), fastdebug)
+  CFLAGS_WARN/concurrentMark.o = $(CFLAGS_WARN/DEFAULT) -Wno-format-overflow
+endif
 CFLAGS += $(CFLAGS_WARN/BYFILE)
 
 # Do not use C++ exception handling
