@@ -66,8 +66,8 @@ CXXFLAGS += -DASSERT
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 # Compiler warnings are treated as errors
-CFLAGS_WARN = $(WARNINGS_ARE_ERRORS)
-CFLAGS += $(CFLAGS_WARN) -Wno-register
+CFLAGS_WARN = $(WARNINGS_ARE_ERRORS) -Wno-register
+CFLAGS += $(CFLAGS_WARN)
 
 OBJECTNAMES = \
 	adlparse.o \

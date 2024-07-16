@@ -116,6 +116,10 @@ CXXFLAGS/ostream.o += -D_FILE_OFFSET_BITS=64
 endif # ifneq ($(LP64), 1)
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
+CFLAGS_WARN/compileBroker.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+CFLAGS_WARN/method.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+CFLAGS_WARN/thread.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+CFLAGS_WARN/jni.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 CFLAGS += $(CFLAGS_WARN/BYFILE)
 
 # Do not use C++ exception handling
