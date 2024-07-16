@@ -125,6 +125,11 @@ ifeq ($(filter $(DEBUG_LEVEL), slowdebug fastdebug), $(DEBUG_LEVEL))
 endif
 ifeq ($(DEBUG_LEVEL), fastdebug)
   CFLAGS_WARN/concurrentMark.o = $(CFLAGS_WARN/DEFAULT) -Wno-format-overflow
+  CFLAGS_WARN/guardedMemory.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+  CFLAGS_WARN/jfrJniMethodRegistration.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+  CFLAGS_WARN/jfrJvmtiAgent.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+  CFLAGS_WARN/symbolTable.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
+  CFLAGS_WARN/type.o = $(CFLAGS_WARN/DEFAULT) -Wno-format-overflow
 endif
 CFLAGS += $(CFLAGS_WARN/BYFILE)
 
