@@ -120,7 +120,7 @@ CFLAGS_WARN/compileBroker.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 CFLAGS_WARN/method.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 CFLAGS_WARN/thread.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 CFLAGS_WARN/jni.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
-ifeq ($(DEBUG_LEVEL), slowdebug)
+ifeq ($(filter $(DEBUG_LEVEL), slowdebug fastdebug), $(DEBUG_LEVEL))
   CFLAGS_WARN/classFileParser.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 endif
 CFLAGS += $(CFLAGS_WARN/BYFILE)
