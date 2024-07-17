@@ -178,20 +178,27 @@ class MacroAssembler: public Assembler {
     Label*  retaddr = NULL
   );
 
-  virtual void call_VM_leaf_base(
+#ifdef CC_INTERP
+  // c++ interpreter never wants to use interp_masm version of call_VM
+  #define VIRTUAL
+#else
+  #define VIRTUAL virtual
+#endif
+
+  VIRTUAL void call_VM_leaf_base(
     address entry_point,                // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
     Label*  retaddr = NULL
   );
 
-  virtual void call_VM_leaf_base(
+  VIRTUAL void call_VM_leaf_base(
     address entry_point,                // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
     Label&  retaddr) {
     call_VM_leaf_base(entry_point, number_of_arguments, &retaddr);
   }
 
-  virtual void call_VM_base(           // returns the register containing the thread upon return
+  VIRTUAL void call_VM_base(           // returns the register containing the thread upon return
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
@@ -663,6 +670,7 @@ class MacroAssembler: public Assembler {
                      bool haystack_isL);
   void compute_match_mask(Register src, Register pattern, Register match_mask,
                           Register mask1, Register mask2);
+#undef VIRTUAL  //TODO-RISCV64 not sure the exact position
 
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,

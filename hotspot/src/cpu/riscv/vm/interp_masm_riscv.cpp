@@ -89,6 +89,8 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
   j(entry);
 }
 
+#ifndef CC_INTERP
+
 void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) {
   if (JvmtiExport::can_pop_frame()) {
     Label L;
@@ -722,6 +724,8 @@ void InterpreterMacroAssembler::remove_activation(
   andi(sp, esp, -16);
 }
 
+#endif // C_INTERP
+
 // Lock object
 //
 // Args:
@@ -880,6 +884,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   }
 }
 
+#ifndef CC_INTERP
 
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
@@ -1482,6 +1487,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 }
 
 void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
+#endif // !CC_INTERP
 
 void InterpreterMacroAssembler::notify_method_entry() {
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
@@ -1525,23 +1531,24 @@ void InterpreterMacroAssembler::notify_method_exit(
     // is changed then the interpreter_frame_result implementation will
     // need to be updated too.
 
-    // template interpreter will leave the result on the top of the stack.
-    push(state);
+    // For c++ interpreter the result is always stored at a known location in the frame
+    // template interpreter will leave it on the top of the stack.
+    NOT_CC_INTERP(push(state);)
     lwu(x13, Address(xthread, JavaThread::interp_only_mode_offset()));
     beqz(x13, L);
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     bind(L);
-    pop(state);
+    NOT_CC_INTERP(pop(state));
   }
 
   {
     SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    push(state);
+    NOT_CC_INTERP(push(state));
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
                  xthread, c_rarg1);
-    pop(state);
+    NOT_CC_INTERP(pop(state));
   }
 }
 

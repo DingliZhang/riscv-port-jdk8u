@@ -31,8 +31,8 @@
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
@@ -57,231 +57,12 @@
 #include "oops/method.hpp"
 #endif // !PRODUCT
 
-// Size of interpreter code.  Increase if too small.  Interpreter will
-// fail with a guarantee ("not enough space for interpreter generation");
-// if too small.
-// Run with +PrintInterpreter to get the VM to print out the size.
-// Max size with JVMTI
-int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
-
 #define __ _masm->
+
+#ifndef CC_INTERP
 
 //-----------------------------------------------------------------------------
 
-address TemplateInterpreterGenerator::generate_slow_signature_handler() {
-  address entry = __ pc();
-
-  __ andi(esp, esp, -16);
-  __ mv(c_rarg3, esp);
-  // xmethod
-  // xlocals
-  // c_rarg3: first stack arg - wordSize
-  // adjust sp
-
-  __ addi(sp, c_rarg3, -18 * wordSize);
-  __ addi(sp, sp, -2 * wordSize);
-  __ sd(ra, Address(sp, 0));
-
-  __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::slow_signature_handler),
-             xmethod, xlocals, c_rarg3);
-
-  // x10: result handler
-
-  // Stack layout:
-  // sp: return address           <- sp
-  //      1 garbage
-  //      8 integer args (if static first is unused)
-  //      1 float/double identifiers
-  //      8 double args
-  //        stack args              <- esp
-  //        garbage
-  //        expression stack bottom
-  //        bcp (NULL)
-  //        ...
-
-  // Restore ra
-  __ ld(ra, Address(sp, 0));
-  __ addi(sp, sp , 2 * wordSize);
-
-  // Do FP first so we can use c_rarg3 as temp
-  __ lwu(c_rarg3, Address(sp, 9 * wordSize)); // float/double identifiers
-
-  for (int i = 0; i < Argument::n_float_register_parameters_c; i++) {
-    const FloatRegister r = g_FPArgReg[i];
-    Label d, done;
-
-    __ andi(t0, c_rarg3, 1UL << i);
-    __ bnez(t0, d);
-    __ flw(r, Address(sp, (10 + i) * wordSize));
-    __ j(done);
-    __ bind(d);
-    __ fld(r, Address(sp, (10 + i) * wordSize));
-    __ bind(done);
-  }
-
-  // c_rarg0 contains the result from the call of
-  // InterpreterRuntime::slow_signature_handler so we don't touch it
-  // here.  It will be loaded with the JNIEnv* later.
-  for (int i = 1; i < Argument::n_int_register_parameters_c; i++) {
-    const Register rm = g_INTArgReg[i];
-    __ ld(rm, Address(sp, i * wordSize));
-  }
-
-  __ addi(sp, sp, 18 * wordSize);
-  __ ret();
-
-  return entry;
-}
-
-// Various method entries
-address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
-  // xmethod: Method*
-  // x30: sender sp
-  // esp: args
-
-  if (!InlineIntrinsics) {
-    return NULL; // Generate a vanilla entry
-  }
-
-  // These don't need a safepoint check because they aren't virtually
-  // callable. We won't enter these intrinsics from compiled code.
-  // If in the future we added an intrinsic which was virtually callable
-  // we'd have to worry about how to safepoint so that this code is used.
-
-  // mathematical functions inlined by compiler
-  // (interpreter must provide identical implementation
-  // in order to avoid monotonicity bugs when switching
-  // from interpreter to compiler in the middle of some
-  // computation)
-  //
-  // stack:
-  //        [ arg ] <-- esp
-  //        [ arg ]
-  // retaddr in ra
-
-  address fn = NULL;
-  address entry_point = NULL;
-  Register continuation = ra;
-  switch (kind) {
-    case Interpreter::java_lang_math_abs:
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ fabs_d(f10, f10);
-      __ mv(sp, x30); // Restore caller's SP
-      break;
-    case Interpreter::java_lang_math_sqrt:
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ fsqrt_d(f10, f10);
-      __ mv(sp, x30);
-      break;
-    case Interpreter::java_lang_math_sin :
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ mv(sp, x30);
-      __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    case Interpreter::java_lang_math_cos :
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ mv(sp, x30);
-      __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    case Interpreter::java_lang_math_tan :
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ mv(sp, x30);
-      __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    case Interpreter::java_lang_math_log :
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ mv(sp, x30);
-      __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    case Interpreter::java_lang_math_log10 :
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ mv(sp, x30);
-      __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    case Interpreter::java_lang_math_exp :
-      entry_point = __ pc();
-      __ fld(f10, Address(esp));
-      __ mv(sp, x30);
-      __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    case Interpreter::java_lang_math_pow :
-      entry_point = __ pc();
-      __ mv(x9, ra);
-      continuation = x9;
-      __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
-      __ fld(f11, Address(esp));
-      __ mv(sp, x30);
-      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
-      __ mv(t0, fn);
-      __ jalr(t0);
-      break;
-    default:
-      ;
-  }
-  if (entry_point != NULL) {
-    __ jr(continuation);
-  }
-
-  return entry_point;
-}
-
-// Abstract method entry
-// Attempt to execute abstract method. Throw exception
-address TemplateInterpreterGenerator::generate_abstract_entry(void) {
-  // xmethod: Method*
-  // x30: sender SP
-
-  address entry_point = __ pc();
-
-  // abstract method entry
-
-  //  pop return address, reset last_sp to NULL
-  __ empty_expression_stack();
-  __ restore_bcp();      // bcp must be correct for exception handler   (was destroyed)
-  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
-
-  // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                                     InterpreterRuntime::throw_AbstractMethodErrorWithMethod),
-                                     xmethod);
-  // the call_VM checks for exception, so we should never return here.
-  __ should_not_reach_here();
-
-  return entry_point;
-}
 
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   address entry = __ pc();
@@ -506,7 +287,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
 //
 // xmethod: method
 //
-void TemplateInterpreterGenerator::generate_counter_incr(
+void InterpreterGenerator::generate_counter_incr(
         Label* overflow,
         Label* profile_method,
         Label* profile_method_continue) {
@@ -583,11 +364,11 @@ void TemplateInterpreterGenerator::generate_counter_incr(
   }
 }
 
-void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
+void InterpreterGenerator::generate_counter_overflow(Label& do_continue) {
   __ mv(c_rarg1, zr);
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), c_rarg1);
-  __ j(do_continue);
+  __ j(*do_continue);
 }
 
 // See if we've got enough room on the stack for locals plus overhead
@@ -608,7 +389,7 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
 //
 // Kills:
 //      x10
-void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
+void InterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
@@ -802,7 +583,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 //
 
 // Method entry for java.lang.ref.Reference.get.
-address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
+address InterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
   //
@@ -866,7 +647,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
+address InterpreterGenerator::generate_CRC32_update_entry() {
   // TODO: Unimplemented generate_CRC32_update_entry
   return 0;
 }
@@ -876,7 +657,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
-address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32_updateBytes_entry
   return 0;
 }
@@ -888,12 +669,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  * Unlike CRC32, CRC32C does not have any methods marked as native
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
-address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  // TODO: Unimplemented generate_CRC32C_updateBytes_entry
-  return 0;
-}
-
-void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
+void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
@@ -909,7 +685,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
-address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
+address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1288,7 +1064,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (inc_counter) {
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(continue_after_compile);
+    generate_counter_overflow(&continue_after_compile);
   }
 
   return entry_point;
@@ -1297,7 +1073,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // determine code generation flags
   const bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
@@ -1440,7 +1216,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(continue_after_compile);
+    generate_counter_overflow(&continue_after_compile);
   }
 
   return entry_point;
@@ -1720,6 +1496,17 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 }
 
 //-----------------------------------------------------------------------------
+// Generation of individual instructions
+
+// helpers for generate_and_dispatch
+
+
+InterpreterGenerator::InterpreterGenerator(StubQueue* code)
+  : TemplateInterpreterGenerator(code) {
+   generate_all(); // down here so it can be "virtual"
+}
+
+//-----------------------------------------------------------------------------
 
 // Non-product code
 #ifndef PRODUCT
@@ -1776,3 +1563,4 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
+#endif // ! CC_INTERP
