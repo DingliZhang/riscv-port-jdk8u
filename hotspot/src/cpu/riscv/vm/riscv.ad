@@ -8802,6 +8802,7 @@ instruct string_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register);
   %}
+  ins_pipe(pipe_class_memory);
 %}
 
 // clearing of an array
