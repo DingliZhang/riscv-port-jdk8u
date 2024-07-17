@@ -1903,7 +1903,7 @@ encode %{
  
     if (_method) {
       // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
     }
   %}
 
