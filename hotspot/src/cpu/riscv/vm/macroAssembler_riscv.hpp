@@ -170,6 +170,9 @@ class MacroAssembler: public Assembler {
 
   // thread in the default location (xthread)
   void reset_last_Java_frame(bool clear_fp);
+  void reset_last_Java_frame(Register thread, bool clearfp, bool clear_pc);
+  // thread in the default location (r15_thread on 64bit)
+  void reset_last_Java_frame(bool clear_fp, bool clear_pc);
 
   void call_native(address entry_point,
                    Register arg_0);

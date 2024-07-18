@@ -939,7 +939,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // reset_last_Java_frame
-  __ reset_last_Java_frame(true);
+  __ reset_last_Java_frame(true, true);
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
