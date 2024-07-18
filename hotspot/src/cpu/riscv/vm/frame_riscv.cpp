@@ -231,7 +231,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
                 return false;
             }
         }
-
+    }
     // If the frame size is 0 something (or less) is bad because every nmethod has a non-zero frame size
     // because the return address counts against the callee's frame.
     if (sender_blob->frame_size() <= 0) {

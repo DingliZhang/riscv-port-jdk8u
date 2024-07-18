@@ -258,6 +258,7 @@ JVM_handle_linux_signal(int sig,
         // stack overflow
         if (thread->in_stack_yellow_zone(addr)) {
           thread->disable_stack_yellow_zone();
+          if (thread->thread_state() == _thread_in_Java) {
             // Throw a stack overflow exception.  Guard pages will be reenabled
             // while unwinding the stack.
             thread->disable_stack_yellow_reserved_zone();
