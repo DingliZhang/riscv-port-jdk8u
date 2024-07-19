@@ -26,7 +26,6 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -150,6 +149,88 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
   assert_cond(_masm != NULL);
   __ load_heap_oop(dst, src, x7, x11, decorators);
 }
+
+//TODO-RISCV64
+// static void do_oop_store(InterpreterMacroAssembler* _masm,
+//                          Address obj,
+//                          Register val,
+//                          BarrierSet::Name barrier,
+//                          bool precise) {
+//   assert(val == noreg || val == x10, "parameter is just for looks");
+//   switch (barrier) {
+// #if INCLUDE_ALL_GCS
+//     case BarrierSet::G1BarrierSet:
+//       {
+//         // flatten object address if needed
+//         if (obj.index() == noreg && obj.offset() == 0) {
+//           if (obj.base() != r3) {
+//             __ mov(r3, obj.base());
+//           }
+//         } else {
+//           __ lea(r3, obj);
+//         }
+//         __ g1_write_barrier_pre(r3 /* obj */,
+//                                 r1 /* pre_val */,
+//                                 rthread /* thread */,
+//                                 r10  /* tmp */,
+//                                 val != noreg /* tosca_live */,
+//                                 false /* expand_call */);
+//         if (val == noreg) {
+//           __ store_heap_oop_null(Address(r3, 0));
+//         } else {
+//           // G1 barrier needs uncompressed oop for region cross check.
+//           Register new_val = val;
+//           if (UseCompressedOops) {
+//             new_val = rscratch2;
+//             __ mov(new_val, val);
+//           }
+//           __ store_heap_oop(Address(r3, 0), val);
+//           __ g1_write_barrier_post(r3 /* store_adr */,
+//                                    new_val /* new_val */,
+//                                    rthread /* thread */,
+//                                    r10 /* tmp */,
+//                                    r1 /* tmp2 */);
+//         }
+
+//       }
+//       break;
+// #endif // INCLUDE_ALL_GCS
+//     case BarrierSet::CardTableBarrierSet:
+//       {
+//         if (val == noreg) {
+//           __ store_heap_oop_null(obj);
+//         } else {
+//           __ store_heap_oop(obj, val);
+//           // flatten object address if needed
+//           if (!precise || (obj.index() == noreg && obj.offset() == 0)) {
+//             __ store_check(obj.base());
+//           } else {
+//             __ lea(r3, obj);
+//             __ store_check(r3);
+//           }
+//         }
+//       }
+//       break;
+//     case BarrierSet::ModRef:
+//       if (val == noreg) {
+//         __ store_heap_oop_null(obj);
+//       } else {
+//         __ store_heap_oop(obj, val);
+//       }
+//       break;
+//     default      :
+//       ShouldNotReachHere();
+//   }
+// }
+
+//TODO-RISCV64
+// static void do_oop_load(InterpreterMacroAssembler* _masm,
+//                         Address src,
+//                         Register dst,
+//                         DecoratorSet decorators) {
+//   BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+//   bs->load_at(_masm, decorators, T_OBJECT, dst, src, /*tmp1*/ r10, /*tmp_thread*/ r1);
+// }
 
 Address TemplateTable::at_bcp(int offset) {
   assert(_desc->uses_bcp(), "inconsistent uses_bcp information");
@@ -1132,6 +1213,7 @@ void TemplateTable::aastore() {
   __ ld(x10, at_tos());
   // Now store using the appropriate barrier
   do_oop_store(_masm, element_address, x10, IS_ARRAY);
+  // do_oop_store(_masm, element_address, r0, _bs->kind(), true);  TODO-RISCV64
   __ j(done);
 
   // Have a NULL in x10, x13=array, x12=index.  Store NULL at ary[idx]
@@ -1140,6 +1222,7 @@ void TemplateTable::aastore() {
 
   // Store a NULL
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
+  // do_oop_store(_masm, element_address, noreg, _bs->kind(), true);  TODO-RISCV64
 
   // Pop stack arguments
   __ bind(done);
@@ -2505,6 +2588,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bnez(t0, notObj);
   // atos
   do_oop_load(_masm, field, x10, IN_HEAP);
+  // __ load_heap_oop(r0, field);  TODO-RISCV64
   __ push(atos);
   if (rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_agetfield, bc, x11);
@@ -2763,6 +2847,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     const Address field(off, 0);
     // Store into the field
     do_oop_store(_masm, field, x10, IN_HEAP);
+    // do_oop_store(_masm, field, r0, _bs->kind(), false);  TODO-RISCV64
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, bc, x11, true, byte_no);
     }
@@ -3019,6 +3104,7 @@ void TemplateTable::fast_storefield(TosState state)
   switch (bytecode()) {
     case Bytecodes::_fast_aputfield:
       do_oop_store(_masm, field, x10, IN_HEAP);
+      // do_oop_store(_masm, field, r0, _bs->kind(), false);  TODO-RISCV64
       break;
     case Bytecodes::_fast_lputfield:
       __ access_store_at(T_LONG, IN_HEAP, field, x10, noreg, noreg);
@@ -3105,6 +3191,7 @@ void TemplateTable::fast_accessfield(TosState state)
   switch (bytecode()) {
     case Bytecodes::_fast_agetfield:
       do_oop_load(_masm, field, x10, IN_HEAP);
+      // __ load_heap_oop(r0, field);  TODO-RISCV64
       __ verify_oop(x10);
       break;
     case Bytecodes::_fast_lgetfield:
@@ -3165,6 +3252,7 @@ void TemplateTable::fast_xaccess(TosState state)
     case atos:
       __ add(x10, x10, x11);
       do_oop_load(_masm, Address(x10, 0), x10, IN_HEAP);
+      // __ load_heap_oop(r0, Address(r0, r1, Address::lsl(0)));  TODO-RISCV64
       __ verify_oop(x10);
       break;
     case ftos:

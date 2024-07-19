@@ -1610,6 +1610,30 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Unbox oop result, e.g. JNIHandles::resolve result.
   if (is_reference_type(ret_type)) {
+// TODO-RISCV64
+//    Label done, not_weak;
+//    __ cbz(r0, done);           // Use NULL as-is.
+//    STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
+//    __ tbz(r0, 0, not_weak);    // Test for jweak tag.
+//    // Resolve jweak.
+//    __ ldr(r0, Address(r0, -JNIHandles::weak_tag_value));
+//    __ verify_oop(r0);
+//#if INCLUDE_ALL_GCS
+//    if (UseG1GC) {
+//      __ g1_write_barrier_pre(noreg /* obj */,
+//                              r0 /* pre_val */,
+//                              rthread /* thread */,
+//                              rscratch2 /* tmp */,
+//                              true /* tosca_live */,
+//                              true /* expand_call */);
+//    }
+//#endif // INCLUDE_ALL_GCS
+//    __ b(done);
+//    __ bind(not_weak);
+//    // Resolve (untagged) jobject.
+//    __ ldr(r0, Address(r0, 0));
+//    __ verify_oop(r0);
+//    __ bind(done);
     __ resolve_jobject(x10, xthread, t1);
   }
 

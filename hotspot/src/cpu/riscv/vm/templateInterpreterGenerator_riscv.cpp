@@ -26,7 +26,6 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -584,6 +583,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // Method entry for java.lang.ref.Reference.get.
 address InterpreterGenerator::generate_Reference_get_entry(void) {
+// #if INCLUDE_ALL_GCS TODO-RISCV64
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
   //
@@ -619,12 +619,48 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   const int referent_offset = java_lang_ref_Reference::referent_offset;
   guarantee(referent_offset > 0, "referent offset not initialized");
 
+//  TODO-RISCV64
+//  if (UseG1GC) {
+//    Label slow_path;
+//    const Register local_0 = c_rarg0;
+//    // Check if local 0 != NULL
+//    // If the receiver is null then it is OK to jump to the slow path.
+//    __ ldr(local_0, Address(esp, 0));
+//    __ cbz(local_0, slow_path);
+//
+//    // Load the value of the referent field.
+//    const Address field_address(local_0, referent_offset);
+//    __ load_heap_oop(local_0, field_address);
+//
+//    __ mov(r19, r13);   // Move senderSP to a callee-saved register
+//    // Generate the G1 pre-barrier code to log the value of
+//    // the referent field in an SATB buffer.
+//    __ enter(); // g1_write may call runtime
+//    __ g1_write_barrier_pre(noreg /* obj */,
+//                            local_0 /* pre_val */,
+//                            rthread /* thread */,
+//                            rscratch2 /* tmp */,
+//                            true /* tosca_live */,
+//                            true /* expand_call */);
+//    __ leave();
+//    // areturn
+//    __ andr(sp, r19, -16);  // done with stack
+//    __ ret(lr);
+
   Label slow_path;
   const Register local_0 = c_rarg0;
   // Check if local 0 != NULL
   // If the receiver is null then it is OK to jump to the slow path.
   __ ld(local_0, Address(esp, 0));
   __ beqz(local_0, slow_path);
+
+//  TODO-RISCV64
+//    // generate a vanilla interpreter entry as the slow path
+//    __ bind(slow_path);
+//    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+//    return entry;
+//  }
+//#endif // INCLUDE_ALL_GCS
 
   __ mv(x9, x30);   // Move senderSP to a callee-saved register
 
@@ -641,6 +677,10 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   __ bind(slow_path);
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
+//  TODO-RISCV64
+//  // If G1 is not enabled then attempt to go through the accessor entry point
+//  // Reference.get is an accessor
+//  return NULL;
 }
 
 /**
@@ -959,6 +999,29 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bne(t, result_handler, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);
+//  TODO-RISCV64
+//    __ cbz(r0, store_result);   // Use NULL as-is.
+//    STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
+//    __ tbz(r0, 0, not_weak);    // Test for jweak tag.
+//    // Resolve jweak.
+//    __ ldr(r0, Address(r0, -JNIHandles::weak_tag_value));
+//#if INCLUDE_ALL_GCS
+//    if (UseG1GC) {
+//      __ enter();                   // Barrier may call runtime.
+//      __ g1_write_barrier_pre(noreg /* obj */,
+//                              r0 /* pre_val */,
+//                              rthread /* thread */,
+//                              t /* tmp */,
+//                              true /* tosca_live */,
+//                              true /* expand_call */);
+//      __ leave();
+//    }
+//#endif // INCLUDE_ALL_GCS
+//    __ b(store_result);
+//    __ bind(not_weak);
+//    // Resolve (untagged) jobject.
+//    __ ldr(r0, Address(r0, 0));
+//    __ bind(store_result);
     __ resolve_jobject(x10, xthread, t);
     __ sd(x10, Address(fp, frame::interpreter_frame_oop_temp_offset * wordSize));
     // keep stack depth as expected by pushing oop which will eventually be discarded
