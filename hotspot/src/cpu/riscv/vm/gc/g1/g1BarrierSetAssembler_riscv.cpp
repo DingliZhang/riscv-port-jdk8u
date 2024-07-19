@@ -33,7 +33,6 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
