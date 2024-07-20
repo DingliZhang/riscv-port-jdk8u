@@ -689,6 +689,15 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
  */
 address InterpreterGenerator::generate_CRC32_update_entry() {
   // TODO: Unimplemented generate_CRC32_update_entry
+  Label slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  //  __ safepoint_poll(slow_path);
+  ExternalAddress state(SafepointSynchronize::address_of_state());
+  int32_t offset = 0;
+  __ la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
+  __ lwu(t0, Address(t0, offset));
+  assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
+  __ bnez(t0, slow_path);
   return 0;
 }
 
@@ -699,6 +708,13 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  */
 address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32_updateBytes_entry
+  // __ safepoint_poll(slow_path);
+  ExternalAddress state(SafepointSynchronize::address_of_state());
+  int32_t offset = 0;
+  __ la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
+  __ lwu(t0, Address(t0, offset));
+  assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
+  __ bnez(t0, slow_path);
   return 0;
 }
 
@@ -948,12 +964,21 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  __ membar(MacroAssembler::AnyAny);  //TODO-RISCV64
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
-    Label L, Continue;
-    __ safepoint_poll_acquire(L);
+    // Label L, Continue;
+    // __ safepoint_poll_acquire(L);
+    Label Continue;
+    {
+      int32_t offset = 0;
+      __ la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
+      __ lwu(t0, Address(t0, offset));
+    }
+    assert(SafepointSynchronize::_not_synchronized == 0, "SafepointSynchronize::_not_synchronized");
+    Label L;
+    __ bnez(t0, slow_path);
     __ lwu(t1, Address(xthread, JavaThread::suspend_flags_offset()));
     __ beqz(t1, Continue);
     __ bind(L);

@@ -1815,7 +1815,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ add(xbcp, xbcp, x12);
     __ load_unsigned_byte(t0, Address(xbcp, 0));
     // load the next target bytecode into t0, it is the argument of dispatch_only
-    __ dispatch_only(vtos, /*generate_poll*/true);
+    __ dispatch_only(vtos);
     return;
   }
 
@@ -1927,7 +1927,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   // continue with the bytecode @ target
   // t0: target bytecode
   // xbcp: target bcp
-  __ dispatch_only(vtos, /*generate_poll*/true);
+  __ dispatch_only(vtos);
 
   if (UseLoopCounter) {
     if (ProfileInterpreter && !TieredCompilation) {
@@ -2143,7 +2143,7 @@ void TemplateTable::tableswitch() {
   __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
   __ add(xbcp, xbcp, x13);
   __ load_unsigned_byte(t0, Address(xbcp));
-  __ dispatch_only(vtos, /*generate_poll*/true);
+  __ dispatch_only(vtos);
   // handle default
   __ bind(default_case);
   __ profile_switch_default(x10);
@@ -2192,7 +2192,7 @@ void TemplateTable::fast_linearswitch() {
   __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
   __ add(xbcp, xbcp, x13);
   __ lbu(t0, Address(xbcp, 0));
-  __ dispatch_only(vtos, /*generate_poll*/true);
+  __ dispatch_only(vtos);
 }
 
 void TemplateTable::fast_binaryswitch() {
@@ -2297,7 +2297,7 @@ void TemplateTable::fast_binaryswitch() {
 
   __ add(xbcp, xbcp, j);
   __ la(xbcp, Address(xbcp, 0));
-  __ dispatch_only(vtos, /*generate_poll*/true);
+  __ dispatch_only(vtos);
 
   // default case -> j = default offset
   __ bind(default_case);
@@ -2310,7 +2310,7 @@ void TemplateTable::fast_binaryswitch() {
 
   __ add(xbcp, xbcp, j);
   __ la(xbcp, Address(xbcp, 0));
-  __ dispatch_only(vtos, /*generate_poll*/true);
+  __ dispatch_only(vtos);
 }
 
 void TemplateTable::_return(TosState state)

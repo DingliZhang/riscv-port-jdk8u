@@ -39,7 +39,6 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -491,7 +490,6 @@ void InterpreterMacroAssembler::dispatch_epilog(TosState state, int step) {
 void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               address* table,
                                               bool verifyoop,
-                                              bool generate_poll,
                                               Register Rs) {
   // Pay attention to the argument Rs, which is acquiesce in t0.
   if (VerifyActivationFrameSize) {
@@ -501,17 +499,17 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     verify_oop(x10);
   }
 
-  Label safepoint;
-  address* const safepoint_table = Interpreter::safept_table(state);
-  bool needs_thread_local_poll = generate_poll &&
-    SafepointMechanism::uses_thread_local_poll() && table != safepoint_table;
+  // Label safepoint;
+  // address* const safepoint_table = Interpreter::safept_table(state);
+  // bool needs_thread_local_poll = generate_poll &&
+  //   SafepointMechanism::uses_thread_local_poll() && table != safepoint_table;
 
-  if (needs_thread_local_poll) {
-    NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ld(t1, Address(xthread, Thread::polling_page_offset()));
-    andi(t1, t1, SafepointMechanism::poll_bit());
-    bnez(t1, safepoint);
-  }
+  // if (needs_thread_local_poll) {
+  //   NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
+  //   ld(t1, Address(xthread, Thread::polling_page_offset()));
+  //   andi(t1, t1, SafepointMechanism::poll_bit());
+  //   bnez(t1, safepoint);
+  // }
   if (table == Interpreter::dispatch_table(state)) {
     li(t1, Interpreter::distance_from_dispatch_table(state));
     add(t1, Rs, t1);
@@ -523,17 +521,17 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   ld(t1, Address(t1));
   jr(t1);
 
-  if (needs_thread_local_poll) {
-    bind(safepoint);
-    la(t1, ExternalAddress((address)safepoint_table));
-    shadd(t1, Rs, t1, Rs, 3);
-    ld(t1, Address(t1));
-    jr(t1);
-  }
+  // if (needs_thread_local_poll) {
+  //   bind(safepoint);
+  //   la(t1, ExternalAddress((address)safepoint_table));
+  //   shadd(t1, Rs, t1, Rs, 3);
+  //   ld(t1, Address(t1));
+  //   jr(t1);
+  // }
 }
 
-void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll, Register Rs) {
-  dispatch_base(state, Interpreter::dispatch_table(state), true, generate_poll, Rs);
+void InterpreterMacroAssembler::dispatch_only(TosState state) {
+  dispatch_base(state, Interpreter::dispatch_table(state));
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state, Register Rs) {
@@ -544,11 +542,11 @@ void InterpreterMacroAssembler::dispatch_only_noverify(TosState state, Register 
   dispatch_base(state, Interpreter::normal_table(state), false, Rs);
 }
 
-void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int step) {
   // load next bytecode
   load_unsigned_byte(t0, Address(xbcp, step));
   add(xbcp, xbcp, step);
-  dispatch_base(state, Interpreter::dispatch_table(state), true, generate_poll);
+  dispatch_base(state, Interpreter::dispatch_table(state));
 }
 
 void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {

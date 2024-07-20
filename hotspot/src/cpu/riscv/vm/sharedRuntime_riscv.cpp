@@ -1529,11 +1529,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  __ membar(MacroAssembler::AnyAny);  //TODO-RISCV64
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
-    __ safepoint_poll_acquire(safepoint_in_progress);
+    // __ safepoint_poll_acquire(safepoint_in_progress);
+    // TODO-RISCV64
+    assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
+    int32_t offset = 0;
+    __ la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
+    __ lwu(t0, Address(t0, offset));
+    __ bnez(t0, safepoint_in_progress);
     __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
     __ bnez(t0, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);
@@ -2379,11 +2385,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   if (!cause_return) {
     // overwrite the return address pushed by save_live_registers
-    // Additionally, x18 is a callee-saved register so we can look at
-    // it later to determine if someone changed the return address for
-    // us!
-    __ ld(x18, Address(xthread, JavaThread::saved_exception_pc_offset()));
-    __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));
+    __ ld(c_rarg0, Address(xthread, JavaThread::saved_exception_pc_offset()));
+    __ sd(c_rarg0, Address(fp, frame::return_addr_offset * wordSize));
   }
 
   // Do the call
@@ -2418,42 +2421,42 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // No exception case
   __ bind(noException);
 
-  Label no_adjust, bail;
-  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
-    // If our stashed return pc was modified by the runtime we avoid touching it
-    __ ld(t0, Address(fp, frame::return_addr_offset * wordSize));
-    __ bne(x18, t0, no_adjust);
+//   Label no_adjust, bail;
+//   if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+//     // If our stashed return pc was modified by the runtime we avoid touching it
+//     __ ld(t0, Address(fp, frame::return_addr_offset * wordSize));
+//     __ bne(x18, t0, no_adjust);
 
-#ifdef ASSERT
-    // Verify the correct encoding of the poll we're about to skip.
-    // See NativeInstruction::is_lwu_to_zr()
-    __ lwu(t0, Address(x18));
-    __ andi(t1, t0, 0b0000011);
-    __ mv(t2, 0b0000011);
-    __ bne(t1, t2, bail); // 0-6:0b0000011
-    __ srli(t1, t0, 7);
-    __ andi(t1, t1, 0b00000);
-    __ bnez(t1, bail);    // 7-11:0b00000
-    __ srli(t1, t0, 12);
-    __ andi(t1, t1, 0b110);
-    __ mv(t2, 0b110);
-    __ bne(t1, t2, bail); // 12-14:0b110
-#endif
-    // Adjust return pc forward to step over the safepoint poll instruction
-    __ add(x18, x18, NativeInstruction::instruction_size);
-    __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));
-  }
+// #ifdef ASSERT
+//     // Verify the correct encoding of the poll we're about to skip.
+//     // See NativeInstruction::is_lwu_to_zr()
+//     __ lwu(t0, Address(x18));
+//     __ andi(t1, t0, 0b0000011);
+//     __ mv(t2, 0b0000011);
+//     __ bne(t1, t2, bail); // 0-6:0b0000011
+//     __ srli(t1, t0, 7);
+//     __ andi(t1, t1, 0b00000);
+//     __ bnez(t1, bail);    // 7-11:0b00000
+//     __ srli(t1, t0, 12);
+//     __ andi(t1, t1, 0b110);
+//     __ mv(t2, 0b110);
+//     __ bne(t1, t2, bail); // 12-14:0b110
+// #endif
+//     // Adjust return pc forward to step over the safepoint poll instruction
+//     __ add(x18, x18, NativeInstruction::instruction_size);
+//     __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));
+//   }
 
-  __ bind(no_adjust);
+//   __ bind(no_adjust);
   // Normal exit, restore registers and exit.
 
   reg_saver.restore_live_registers(masm);
   __ ret();
 
-#ifdef ASSERT
-  __ bind(bail);
-  __ stop("Attempting to adjust pc to skip safepoint poll but the return point is not what we expected");
-#endif
+// #ifdef ASSERT
+//   __ bind(bail);
+//   __ stop("Attempting to adjust pc to skip safepoint poll but the return point is not what we expected");
+// #endif
 
   // Make sure all code is generated
   masm->flush();

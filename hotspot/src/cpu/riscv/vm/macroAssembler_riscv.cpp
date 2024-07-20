@@ -268,29 +268,29 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 }
 
-// Just like safepoint_poll, but use an acquiring load for thread-
-// local polling.
-//
-// We need an acquire here to ensure that any subsequent load of the
-// global SafepointSynchronize::_state flag is ordered after this load
-// of the local Thread::_polling page.  We don't want this poll to
-// return false (i.e. not safepointing) and a later poll of the global
-// SafepointSynchronize::_state spuriously to return true.
-//
-// This is to avoid a race when we're in a native->Java transition
-// racing the code which wakes up from a safepoint.
-//
-void MacroAssembler::safepoint_poll_acquire(Label& slow_path) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    membar(MacroAssembler::AnyAny);
-    ld(t1, Address(xthread, Thread::polling_page_offset()));
-    membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-    andi(t0, t1, SafepointMechanism::poll_bit());
-    bnez(t0, slow_path);
-  } else {
-    safepoint_poll(slow_path);
-  }
-}
+// // Just like safepoint_poll, but use an acquiring load for thread-
+// // local polling.
+// //
+// // We need an acquire here to ensure that any subsequent load of the
+// // global SafepointSynchronize::_state flag is ordered after this load
+// // of the local Thread::_polling page.  We don't want this poll to
+// // return false (i.e. not safepointing) and a later poll of the global
+// // SafepointSynchronize::_state spuriously to return true.
+// //
+// // This is to avoid a race when we're in a native->Java transition
+// // racing the code which wakes up from a safepoint.
+// //
+// void MacroAssembler::safepoint_poll_acquire(Label& slow_path) {
+//   if (SafepointMechanism::uses_thread_local_poll()) {
+//     membar(MacroAssembler::AnyAny);
+//     ld(t1, Address(xthread, Thread::polling_page_offset()));
+//     membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+//     andi(t0, t1, SafepointMechanism::poll_bit());
+//     bnez(t0, slow_path);
+//   } else {
+//     safepoint_poll(slow_path);
+//   }
+// }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp,
                                            bool clear_pc) {
@@ -2340,19 +2340,19 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ld(t1, Address(xthread, Thread::polling_page_offset()));
-    andi(t0, t1, SafepointMechanism::poll_bit());
-    bnez(t0, slow_path);
-  } else {
-    int32_t offset = 0;
-    la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
-    lwu(t0, Address(t0, offset));
-    assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
-    bnez(t0, slow_path);
-  }
-}
+// void MacroAssembler::safepoint_poll(Label& slow_path) {
+//   if (SafepointMechanism::uses_thread_local_poll()) {
+//     ld(t1, Address(xthread, Thread::polling_page_offset()));
+//     andi(t0, t1, SafepointMechanism::poll_bit());
+//     bnez(t0, slow_path);
+//   } else {
+//     int32_t offset = 0;
+//     la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
+//     lwu(t0, Address(t0, offset));
+//     assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
+//     bnez(t0, slow_path);
+//   }
+// }
 
 void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                                 Label &succeed, Label *fail) {
@@ -3161,27 +3161,33 @@ void MacroAssembler::biased_locking_exit(Register obj_reg, Register tmp_reg, Lab
   beqz(tmp_reg, done);
 }
 
-// Move the address of the polling page into dest.
-void MacroAssembler::get_polling_page(Register dest, address page, int32_t &offset, relocInfo::relocType rtype) {
-  if (SafepointMechanism::uses_thread_local_poll()) {
-    ld(dest, Address(xthread, Thread::polling_page_offset()));
-  } else {
-    uint64_t align = (uint64_t)page & 0xfff;
-    assert(align == 0, "polling page must be page aligned");
-    la_patchable(dest, Address(page, rtype), offset);
-  }
-}
+// // Move the address of the polling page into dest.
+// void MacroAssembler::get_polling_page(Register dest, address page, int32_t &offset, relocInfo::relocType rtype) {
+//   if (SafepointMechanism::uses_thread_local_poll()) {
+//     ld(dest, Address(xthread, Thread::polling_page_offset()));
+//   } else {
+//     uint64_t align = (uint64_t)page & 0xfff;
+//     assert(align == 0, "polling page must be page aligned");
+//     la_patchable(dest, Address(page, rtype), offset);
+//   }
+// }
 
 // Read the polling page.  The address of the polling page must
 // already be in r.
 void MacroAssembler::read_polling_page(Register dest, address page, relocInfo::relocType rtype) {
   int32_t offset = 0;
-  get_polling_page(dest, page, offset, rtype);
-  read_polling_page(dest, offset, rtype);
+  // get_polling_page(dest, page, offset, rtype);
+  // read_polling_page(dest, offset, rtype);
+  unsigned long off;
+  uint64_t align = (uint64_t)page & 0xfff;
+  assert(align == 0, "polling page must be page aligned");
+  la_patchable(dest, Address(page, rtype), offset);
+  InstructionMark im(this);
+  code_section()->relocate(pc(), rtype);
+  lwu(zr, Address(dest, offset));
+  return inst_mark();
 }
 
-// Read the polling page.  The address of the polling page must
-// already be in r.
 void MacroAssembler::read_polling_page(Register dest, int32_t offset, relocInfo::relocType rtype) {
   code_section()->relocate(pc(), rtype);
   lwu(zr, Address(dest, offset));

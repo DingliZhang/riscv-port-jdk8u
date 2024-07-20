@@ -41,8 +41,8 @@ class MacroAssembler: public Assembler {
   }
   virtual ~MacroAssembler() {}
 
-  void safepoint_poll(Label& slow_path);
-  void safepoint_poll_acquire(Label& slow_path);
+  // void safepoint_poll(Label& slow_path);
+  // void safepoint_poll_acquire(Label& slow_path);
 
   // Biased locking support
   // lock_reg and obj_reg must be loaded up with the appropriate values.
@@ -656,7 +656,7 @@ class MacroAssembler: public Assembler {
                                                 Register tmp,
                                                 int offset);
 
-  void get_polling_page(Register dest, address page, int32_t &offset, relocInfo::relocType rtype);
+  // void get_polling_page(Register dest, address page, int32_t &offset, relocInfo::relocType rtype);
   void read_polling_page(Register r, address page, relocInfo::relocType rtype);
   void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 

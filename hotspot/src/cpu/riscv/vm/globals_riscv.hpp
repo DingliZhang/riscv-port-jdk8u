@@ -80,7 +80,7 @@ define_pd_global(bool, CompactStrings, true);
 // Clear short arrays bigger than one word in an arch-specific way
 define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
-define_pd_global(bool, ThreadLocalHandshakes, true);
+define_pd_global(bool, ThreadLocalHandshakes, false);
 
 define_pd_global(intx, InlineSmallCode,          1000);
 
