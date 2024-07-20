@@ -130,6 +130,7 @@ ifeq ($(DEBUG_LEVEL), fastdebug)
   CFLAGS_WARN/jfrJvmtiAgent.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
   CFLAGS_WARN/symbolTable.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
   CFLAGS_WARN/type.o = $(CFLAGS_WARN/DEFAULT) -Wno-format-overflow
+  CFLAGS_WARN/bytecodeAssembler.o = $(CFLAGS_WARN/DEFAULT) -Wno-stringop-overflow
 endif
 CFLAGS += $(CFLAGS_WARN/BYFILE)
 
