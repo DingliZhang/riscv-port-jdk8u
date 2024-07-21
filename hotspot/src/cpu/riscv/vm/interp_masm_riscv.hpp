@@ -52,7 +52,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             bool check_exceptions);
 
   // base routine for all dispatches
-  void dispatch_base(TosState state, address* table, bool verifyoop = true);
+  void dispatch_base(TosState state, address* table, bool verifyoop = true, Register Rs = t0);
 #endif // CC_INTERP
 
  public:
