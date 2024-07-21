@@ -285,16 +285,6 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   load_heap_oop(result, Address(result, 0));
 }
 
-//TODO-RISCV64, this function should be deleted in revert JDK-8171392
-void InterpreterMacroAssembler::load_resolved_klass_at_offset(
-                                Register cpool, Register index, Register klass, Register temp) {
-  shadd(temp, index, cpool, temp, LogBytesPerWord);
-  lhu(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
-  ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes())); // klass = cpool->_resolved_klasses
-  shadd(klass, temp, klass, temp, LogBytesPerWord);
-  ld(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
-}
-
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
 // subtype of super_klass.
 //

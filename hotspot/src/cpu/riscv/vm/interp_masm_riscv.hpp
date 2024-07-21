@@ -129,9 +129,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Load cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp = x15);
 
-  // Load cpool->resolved_klass_at(index).  //TODO-RISCV64, this function should be deleted in revert JDK-8171392
-  void load_resolved_klass_at_offset(Register cpool, Register index, Register klass, Register temp);
-
   void pop_ptr(Register r = x10);
   void pop_i(Register r = x10);
   void pop_l(Register r = x10);
