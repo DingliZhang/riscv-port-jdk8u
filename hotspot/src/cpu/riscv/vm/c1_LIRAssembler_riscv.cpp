@@ -464,11 +464,10 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   assert(os::is_poll_address(polling_page), "should be");
   int32_t offset = 0;
   // __ get_polling_page(t0, polling_page, offset, relocInfo::poll_type);
-  unsigned long off;
   // __ adrp(rscratch1, Address(polling_page, relocInfo::poll_type), off);
-  __ la_patchable(t0, Address(polling_page, relocInfo::poll_type), off);  //TODO-RISCV64, change from 'get_polling_page' to 'la_patchable + addi', imitate from generate_fast_get_int_field0 in jniFastGetField_riscv.cpp
-  __ addi(t0, t0, off);
-  assert(off == 0, "must be");
+  __ la_patchable(t0, Address(polling_page, relocInfo::poll_type), offset);  //TODO-RISCV64, change from 'get_polling_page' to 'la_patchable + addi', imitate from generate_fast_get_int_field0 in jniFastGetField_riscv.cpp
+  __ addi(t0, t0, offset);
+  assert(offset == 0, "must be");
   add_debug_info_for_branch(info);  // This isn't just debug info:
   // it's the oop map
   __ read_polling_page(t0, offset, relocInfo::poll_type);
