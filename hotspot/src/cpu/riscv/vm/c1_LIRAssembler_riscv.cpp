@@ -414,7 +414,7 @@ int LIR_Assembler::emit_deopt_handler() {
 // explicitly check for a safepoint in progress and if there is one,
 // fake a call to the handler as if a segfault had been caught.
 void LIR_Assembler::poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info) {
-  // TODO-RISCV64
+  // TODO-RISCV64, maybe could get code from LIR_Assembler::safepoint_poll
   // __ mov(rscratch1, SafepointSynchronize::address_of_state());
   // __ ldrb(rscratch1, Address(rscratch1));
   // Label nope, poll;
