@@ -277,8 +277,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // Load pointer for resolved_references[] objArray
-  ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
-  ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
+  ld(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
   resolve_oop_handle(result, tmp);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
@@ -286,6 +285,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   load_heap_oop(result, Address(result, 0));
 }
 
+//TODO-RISCV64, this function should be deleted in revert JDK-8171392
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                                 Register cpool, Register index, Register klass, Register temp) {
   shadd(temp, index, cpool, temp, LogBytesPerWord);

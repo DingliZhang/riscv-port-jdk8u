@@ -3629,7 +3629,7 @@ void TemplateTable::_new() {
   __ bnez(t1, slow_case);
 
   // get InstanceKlass
-  __ load_resolved_klass_at_offset(x14, x13, x14, t0);
+  __ load_resolved_klass_at_offset(x14, x13, x14, t0);  //TODO-RISCV64, this function should be replaced in revert JDK-8171392
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
@@ -3785,7 +3785,7 @@ void TemplateTable::checkcast()
   // Get superklass in x10 and subklass in x13
   __ bind(quicked);
   __ mv(x13, x10); // Save object in x13; x10 needed for subtype check
-  __ load_resolved_klass_at_offset(x12, x9, x10, t0); // x10 = klass
+  __ load_resolved_klass_at_offset(x12, x9, x10, t0); // x10 = klass  //TODO-RISCV64, this function should be replaced in revert JDK-8171392
 
   __ bind(resolved);
   __ load_klass(x9, x13);
@@ -3843,7 +3843,7 @@ void TemplateTable::instanceof() {
   // Get superklass in x10 and subklass in x13
   __ bind(quicked);
   __ load_klass(x13, x10);
-  __ load_resolved_klass_at_offset(x12, x9, x10, t0);
+  __ load_resolved_klass_at_offset(x12, x9, x10, t0);  //TODO-RISCV64, this function should be replaced in revert JDK-8171392
 
   __ bind(resolved);
 
