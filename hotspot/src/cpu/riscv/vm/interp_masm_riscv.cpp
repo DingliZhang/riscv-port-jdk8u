@@ -520,7 +520,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   // }
 }
 
-void InterpreterMacroAssembler::dispatch_only(TosState state) {
+void InterpreterMacroAssembler::dispatch_only(TosState state, Register Rs) {
   dispatch_base(state, Interpreter::dispatch_table(state));
 }
 
