@@ -875,7 +875,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  ld(mdp, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
+  ld(mdp, Address(fp, frame::interpreter_frame_mdx_offset * wordSize));
   beqz(mdp, zero_continue);
 }
 
@@ -894,7 +894,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   ld(x11, Address(xmethod, in_bytes(Method::method_data_offset())));
   la(x11, Address(x11, in_bytes(MethodData::data_offset())));
   add(x10, x11, x10);
-  sd(x10, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
+  sd(x10, Address(fp, frame::interpreter_frame_mdx_offset * wordSize));
   bind(set_mdp);
   pop_reg(0xc00, sp);
 }
@@ -1019,7 +1019,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
   assert(ProfileInterpreter, "must be profiling interpreter");
   ld(t1, Address(mdp_in, offset_of_disp));
   add(mdp_in, mdp_in, t1);
-  sd(mdp_in, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
+  sd(mdp_in, Address(fp, frame::interpreter_frame_mdx_offset * wordSize));
 }
 
 void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
@@ -1029,7 +1029,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
   add(t1, mdp_in, reg);
   ld(t1, Address(t1, offset_of_disp));
   add(mdp_in, mdp_in, t1);
-  sd(mdp_in, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
+  sd(mdp_in, Address(fp, frame::interpreter_frame_mdx_offset * wordSize));
 }
 
 
@@ -1037,7 +1037,7 @@ void InterpreterMacroAssembler::update_mdp_by_constant(Register mdp_in,
                                                        int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   addi(mdp_in, mdp_in, (unsigned)constant);
-  sd(mdp_in, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
+  sd(mdp_in, Address(fp, frame::interpreter_frame_mdx_offset * wordSize));
 }
 
 
@@ -1771,7 +1771,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
         shadd(mdp, tmp, mdp, tmp, exact_log2(DataLayout::cell_size));
       }
-      sd(mdp, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
+      sd(mdp, Address(fp, frame::interpreter_frame_mdx_offset * wordSize));
     } else {
       assert(MethodData::profile_return(), "either profile call args or call ret");
       update_mdp_by_constant(mdp, in_bytes(TypeEntriesAtCall::return_only_size()));
