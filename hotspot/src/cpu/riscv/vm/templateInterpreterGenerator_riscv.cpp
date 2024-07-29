@@ -666,7 +666,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // Load the value of the referent field.
   const Address field_address(local_0, referent_offset);
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
   bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ t1, /*tmp2*/ t0);
 
   // areturn

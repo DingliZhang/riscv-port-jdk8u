@@ -28,7 +28,6 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -2860,7 +2859,7 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Register tmp2,
                                    Label& slow_case,
                                    bool is_far) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp1, tmp2, slow_case, is_far);
 }
 
@@ -2871,7 +2870,7 @@ void MacroAssembler::eden_allocate(Register obj,
                                    Register tmp,
                                    Label& slow_case,
                                    bool is_far) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
   bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp, slow_case, is_far);
 }
 

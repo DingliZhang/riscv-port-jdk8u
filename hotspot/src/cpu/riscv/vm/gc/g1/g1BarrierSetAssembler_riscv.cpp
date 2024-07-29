@@ -186,7 +186,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
   Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-  BarrierSet* bs = BarrierSet::barrier_set();
+  BarrierSet* bs = Universe::heap()->barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
@@ -320,7 +320,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 #define __ ce->masm()->
 
 void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
-  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)Universe::heap()->barrier_set()->barrier_set_c1();
 
   // At this point we know that marking is in progress.
   // If do_load() is true then we have to emit the
@@ -342,7 +342,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
 }
 
 void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
-  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)Universe::heap()->barrier_set()->barrier_set_c1();
   __ bind(*stub->entry());
   assert(stub->addr()->is_register(), "Precondition");
   assert(stub->new_val()->is_register(), "Precondition");
@@ -360,7 +360,7 @@ void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarri
 void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
   __ prologue("g1_pre_barrier", false);
 
-  BarrierSet* bs = BarrierSet::barrier_set();
+  BarrierSet* bs = Universe::heap()->barrier_set();
 
   // arg0 : previous value of memory
   const Register pre_val = x10;
@@ -411,7 +411,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   // arg0 : store_address
   Address store_addr(fp, 2 * BytesPerWord); // 2 BytesPerWord from fp
 
-  BarrierSet* bs = BarrierSet::barrier_set();
+  BarrierSet* bs = Universe::heap()->barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");

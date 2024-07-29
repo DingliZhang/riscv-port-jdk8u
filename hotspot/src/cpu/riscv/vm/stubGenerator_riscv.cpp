@@ -28,7 +28,6 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
@@ -1101,7 +1100,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, s, d, count, saved_reg);
 
     if (is_oop) {
@@ -1169,7 +1168,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, s, d, count, saved_regs);
 
     if (is_oop) {
@@ -1512,7 +1511,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= IS_DEST_UNINITIALIZED;
     }
 
-    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, from, to, count, wb_pre_saved_regs);
 
     // save the original count
