@@ -3492,8 +3492,8 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   Label no_such_method;
 
-  // Preserve method for the throw_AbstractMethodErrorVerbose.
-  __ mv(x28, xmethod);
+  // // Preserve method for the throw_AbstractMethodErrorVerbose.
+  // __ mv(x28, xmethod);
   // Receiver subtype check against REFC.
   // Superklass in x10. Subklass in x13. Blows t1, x30
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
@@ -3514,8 +3514,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ subw(xmethod, xmethod, Method::itable_index_max);
   __ negw(xmethod, xmethod);
 
-  // Preserve recvKlass for throw_AbstractMethodErrorVerbose
-  __ mv(xlocals, x13);
+  // // Preserve recvKlass for throw_AbstractMethodErrorVerbose
+  // __ mv(xlocals, x13);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              xlocals, x10, xmethod,
                              // outputs: method, scan temp. reg
@@ -3546,8 +3546,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   // throw exception
   __ restore_bcp();    // bcp must be correct for exception handler   (was destroyed)
   __ restore_locals(); // make sure locals pointer is correct as well (was destroyed)
-  // Pass arguments for generating a verbose error message.
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose), x13, x28);
+  // // Pass arguments for generating a verbose error message.
+  // __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose), x13, x28);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
@@ -3555,9 +3556,11 @@ void TemplateTable::invokeinterface(int byte_no) {
   // throw exceptiong
   __ restore_bcp();    // bcp must be correct for exception handler   (was destroyed)
   __ restore_locals(); // make sure locals pointer is correct as well (was destroyed)
-  // Pass arguments for generating a verbose error message.
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                                     InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose), x13, x10);
+  // // Pass arguments for generating a verbose error message.
+  // __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+  //                                    InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose), x13, x10);
+   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                   InterpreterRuntime::throw_IncompatibleClassChangeError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return;

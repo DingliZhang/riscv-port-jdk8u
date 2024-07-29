@@ -239,13 +239,15 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ jr(t0);
 
   __ bind(L_no_such_interface);
-  // Handle IncompatibleClassChangeError in itable stubs.
-  // More detailed error message.
-  // We force resolving of the call site by jumping to the "handle
-  // wrong method" stub, and so let the interpreter runtime do all the
-  // dirty work.
-  assert(SharedRuntime::get_handle_wrong_method_stub() != NULL, "check initialization order");
-  __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+  // // Handle IncompatibleClassChangeError in itable stubs.
+  // // More detailed error message.
+  // // We force resolving of the call site by jumping to the "handle
+  // // wrong method" stub, and so let the interpreter runtime do all the
+  // // dirty work.
+  // assert(SharedRuntime::get_handle_wrong_method_stub() != NULL, "check initialization order");
+  // __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+  assert(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()) != NULL, "check initialization order");
+  __ far_jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
 
   masm->flush();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);

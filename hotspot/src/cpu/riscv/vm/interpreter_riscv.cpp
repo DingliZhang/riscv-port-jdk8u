@@ -309,8 +309,7 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                                     InterpreterRuntime::throw_AbstractMethodErrorWithMethod),
-                                     xmethod);
+                                     InterpreterRuntime::throw_AbstractMethodError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
