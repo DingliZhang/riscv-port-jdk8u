@@ -65,14 +65,6 @@ int InterpreterRuntime::SignatureHandlerGenerator::next_stack_offset() {
   return ret;
 }
 
-InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
-  const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
-  _masm = new MacroAssembler(buffer); // allocate on resourse area by default
-  _num_int_args = (method->is_static() ? 1 : 0);
-  _num_fp_args = 0;
-  _stack_offset = 0;
-}
-
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 

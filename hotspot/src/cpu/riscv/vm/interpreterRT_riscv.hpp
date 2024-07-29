@@ -57,6 +57,7 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
     _num_fp_args = 0;
     _stack_offset = 0;
   }
+
   virtual ~SignatureHandlerGenerator() {
     _masm = NULL;
   }
