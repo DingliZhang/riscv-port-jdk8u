@@ -888,7 +888,7 @@ void TemplateTable::aaload()
   do_oop_load(_masm,
               Address(x10),
               x10,
-              IS_ARRAY);
+              IN_HEAP | IS_ARRAY);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, IN_HEAP_ARRAY -> IN_HEAP | IN_HEAP_ARRAY
 }
 
 void TemplateTable::baload()
@@ -1212,7 +1212,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ld(x10, at_tos());
   // Now store using the appropriate barrier
-  do_oop_store(_masm, element_address, x10, IS_ARRAY);
+  do_oop_store(_masm, element_address, x10, IN_HEAP | IS_ARRAY);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, IN_HEAP_ARRAY -> IN_HEAP | IN_HEAP_ARRAY
   // do_oop_store(_masm, element_address, r0, _bs->kind(), true);  TODO-RISCV64
   __ j(done);
 
@@ -1221,7 +1221,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(x12);
 
   // Store a NULL
-  do_oop_store(_masm, element_address, noreg, IS_ARRAY);
+  do_oop_store(_masm, element_address, noreg, IN_HEAP | IS_ARRAY);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, IN_HEAP_ARRAY -> IN_HEAP | IN_HEAP_ARRAY
   // do_oop_store(_masm, element_address, noreg, _bs->kind(), true);  TODO-RISCV64
 
   // Pop stack arguments

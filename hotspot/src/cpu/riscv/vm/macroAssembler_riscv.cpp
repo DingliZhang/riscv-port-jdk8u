@@ -33,7 +33,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_riscv.hpp"
-#include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.hpp"
@@ -537,7 +536,7 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
-                 Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+                 Address(value, -JNIHandles::weak_tag_value), tmp, thread);  //TODO-RISCV64
   verify_oop(value);
   j(done);
 
@@ -1723,7 +1722,7 @@ SkipIfEqual::~SkipIfEqual() {
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
   assert_different_registers(result, tmp);
-  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);
+  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, 'IN_CONCURRENT_ROOT' -> 'IN_ROOT | IN_CONCURRENT_ROOT'
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src)
