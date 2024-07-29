@@ -28,7 +28,6 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 
@@ -118,14 +117,14 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 }
 
-void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
-                                                        Register obj, Register tmp, Label& slowpath) {
-  assert_cond(masm != NULL);
-  // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
-  __ ld(obj, Address(obj, 0));             // *obj
-}
+// void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+//                                                         Register obj, Register tmp, Label& slowpath) {
+//   assert_cond(masm != NULL);
+//   // If mask changes we need to ensure that the inverse is still encodable as an immediate
+//   STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
+//   __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
+//   __ ld(obj, Address(obj, 0));             // *obj
+// }
 
 // Defines obj, preserves var_size_in_bytes, okay for tmp2 == var_size_in_bytes.
 void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
