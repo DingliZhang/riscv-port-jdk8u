@@ -320,10 +320,36 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 // Empty method, generate a very fast return.
 address InterpreterGenerator::generate_empty_entry(void) {
   //TODO-RISCV64
+  // rmethod: Method*
+  // r13: sender sp must set sp to this value on return
+
   if (!UseFastEmptyMethods) {
     return NULL;
   }
-  return generate_entry((address) CppInterpreter::empty_entry);
+
+  address entry_point = __ pc();
+
+  // // If we need a safepoint check, generate full interpreter entry.
+  // Label slow_path;
+  // {
+  //   unsigned long offset;
+  //   assert(SafepointSynchronize::_not_synchronized == 0,
+  //          "SafepointSynchronize::_not_synchronized");
+  //   __ adrp(rscratch2, SafepointSynchronize::address_of_state(), offset);
+  //   __ ldrw(rscratch2, Address(rscratch2, offset));
+  //   __ cbnz(rscratch2, slow_path);
+  // }
+
+  // // do nothing for empty methods (do not even increment invocation counter)
+  // // Code: _return
+  // // _return
+  // // return w/o popping parameters
+  // __ mov(sp, r13); // Restore caller's SP
+  // __ br(lr);
+
+  // __ bind(slow_path);
+  (void) generate_normal_entry(false);
+  return entry_point;
 }
 
 void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {
