@@ -42,7 +42,6 @@
 #include "runtime/thread.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
-#include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
 #include "opto/output.hpp"
 #endif
