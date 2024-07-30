@@ -389,7 +389,8 @@ JVM_handle_linux_signal(int sig,
   sigaddset(&newset, sig);
   sigprocmask(SIG_UNBLOCK, &newset, NULL);
 
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
+  VMError err(t, sig, pc, info, ucVoid);
+  err.report_and_die();
 
   ShouldNotReachHere();
   return true; // Mute compiler
