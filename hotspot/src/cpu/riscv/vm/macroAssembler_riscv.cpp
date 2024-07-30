@@ -1046,7 +1046,8 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
     words_pushed++;
   }
 
-  assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
+  // assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
+  assert(words_pushed == count, "oops, pushed(%d) != count(%d)");
   return count;
 }
 
@@ -1066,7 +1067,8 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
     addi(stack, stack, pop_slots * wordSize);
   }
 
-  assert(words_popped == count, "oops, popped(%d) != count(%d)", words_popped, count);
+  // assert(words_popped == count, "oops, popped(%d) != count(%d)", words_popped, count);
+  assert(words_popped == count, "oops, popped(%d) != count(%d)");
   return count;
 }
 
