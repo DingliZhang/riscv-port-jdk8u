@@ -519,8 +519,13 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
       tty->print_cr("x31 = 0x%016lx", regs[31]);
       BREAKPOINT;
     }
-  }
-  fatal("DEBUG MESSAGE: %s", msg);
+    ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
+  } else {
+    ttyLocker ttyl;
+    ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n",
+                    msg);
+    assert(false, "DEBUG MESSAGE: %s", msg);
+   }
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
