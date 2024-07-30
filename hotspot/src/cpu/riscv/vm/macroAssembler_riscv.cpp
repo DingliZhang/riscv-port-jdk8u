@@ -33,9 +33,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_riscv.hpp"
-#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -1317,7 +1316,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (NativeInstruction::is_li32_at(insn_addr)) {
     // Move narrow OOP
-    narrowOop n = CompressedOops::encode((oop)o);
+    narrowOop n = oopDesc::encode_heap_oop((oop)o);
     return patch_imm_in_li32(insn_addr, (int32_t)n);
   } else if (NativeInstruction::is_movptr_at(insn_addr)) {
     // Move wide OOP
@@ -1757,7 +1756,7 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src)
   }
 }
 
-// Algorithm must match CompressedOops::encode.
+// Algorithm must match oopDesc::encode_heap_oop.
 void MacroAssembler::encode_heap_oop(Register d, Register s) {
   verify_oop(s, "broken oop in encode_heap_oop");
   if (Universe::narrow_oop_base() == NULL) {
