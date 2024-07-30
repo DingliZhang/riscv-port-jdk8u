@@ -298,7 +298,7 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp,
   }
 
   if (clear_pc) {
-    sd(zr, Address(rthread, JavaThread::last_Java_pc_offset()));  //TODO-RISCV64  str -> sd
+    sd(zr, Address(xthread, JavaThread::last_Java_pc_offset()));  //TODO-RISCV64  str -> sd
   }
 }
 
