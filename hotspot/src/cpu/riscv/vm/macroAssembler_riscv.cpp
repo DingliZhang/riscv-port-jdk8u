@@ -1711,11 +1711,11 @@ SkipIfEqual::~SkipIfEqual() {
   _masm = NULL;
 }
 
-void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
-  // OopHandle::resolve is an indirection.
-  assert_different_registers(result, tmp);
-  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, 'IN_CONCURRENT_ROOT' -> 'IN_ROOT | IN_CONCURRENT_ROOT'
-}
+// void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
+//   // OopHandle::resolve is an indirection.
+//   assert_different_registers(result, tmp);
+//   access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, 'IN_CONCURRENT_ROOT' -> 'IN_ROOT | IN_CONCURRENT_ROOT'
+// }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src)
 {

@@ -215,7 +215,7 @@ class MacroAssembler: public Assembler {
   virtual void check_and_handle_earlyret(Register java_thread);
   virtual void check_and_handle_popframe(Register java_thread);
 
-  void resolve_oop_handle(Register result, Register tmp = x15);
+  // void resolve_oop_handle(Register result, Register tmp = x15);
   // void resolve_jobject(Register value, Register thread, Register tmp);
 
   void movoop(Register dst, jobject obj, bool immediate = false);
