@@ -35,37 +35,37 @@
 #define __ masm->
 
 
-void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp) {
-  assert_cond(masm != NULL);
-  assert_different_registers(obj, tmp);
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
+// void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp) {
+//   assert_cond(masm != NULL);
+//   assert_different_registers(obj, tmp);
+//   BarrierSet* bs = Universe::heap()->barrier_set();
+//   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+//   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+//   CardTable* ct = ctbs->card_table();
+//   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  __ srli(obj, obj, CardTable::card_shift);
+//   __ srli(obj, obj, CardTable::card_shift);
 
-  assert(CardTable::dirty_card_val() == 0, "must be");
+//   assert(CardTable::dirty_card_val() == 0, "must be");
 
-  __ load_byte_map_base(tmp);
-  __ add(tmp, obj, tmp);
+//   __ load_byte_map_base(tmp);
+//   __ add(tmp, obj, tmp);
 
-  if (UseCondCardMark) {
-    Label L_already_dirty;
-    __ membar(MacroAssembler::StoreLoad);
-    __ lbu(t1,  Address(tmp));
-    __ beqz(t1, L_already_dirty);
-    __ sb(zr, Address(tmp));
-    __ bind(L_already_dirty);
-  } else {
-    if (ct->scanned_concurrently()) {
-      __ membar(MacroAssembler::StoreStore);
-    }
-    __ sb(zr, Address(tmp));
-  }
-}
+//   if (UseCondCardMark) {
+//     Label L_already_dirty;
+//     __ membar(MacroAssembler::StoreLoad);
+//     __ lbu(t1,  Address(tmp));
+//     __ beqz(t1, L_already_dirty);
+//     __ sb(zr, Address(tmp));
+//     __ bind(L_already_dirty);
+//   } else {
+//     if (ct->scanned_concurrently()) {
+//       __ membar(MacroAssembler::StoreStore);
+//     }
+//     __ sb(zr, Address(tmp));
+//   }
+// }
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register start, Register count, Register tmp, RegSet saved_regs) {
@@ -103,23 +103,23 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ bind(L_done);
 }
 
-void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                                Address dst, Register val, Register tmp1, Register tmp2) {
-  bool in_heap = (decorators & IN_HEAP) != 0;
-  bool is_array = (decorators & IS_ARRAY) != 0;
-  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = is_array || on_anonymous;
+// void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+//                                                 Address dst, Register val, Register tmp1, Register tmp2) {
+//   bool in_heap = (decorators & IN_HEAP) != 0;
+//   bool is_array = (decorators & IS_ARRAY) != 0;
+//   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+//   bool precise = is_array || on_anonymous;
 
-  bool needs_post_barrier = val != noreg && in_heap;
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);
-  if (needs_post_barrier) {
-    // flatten object address if needed
-    if (!precise || dst.offset() == 0) {
-      store_check(masm, dst.base(), x13);
-    } else {
-      assert_cond(masm != NULL);
-      __ la(x13, dst);
-      store_check(masm, x13, t0);
-    }
-  }
-}
+//   bool needs_post_barrier = val != noreg && in_heap;
+//   BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);
+//   if (needs_post_barrier) {
+//     // flatten object address if needed
+//     if (!precise || dst.offset() == 0) {
+//       store_check(masm, dst.base(), x13);
+//     } else {
+//       assert_cond(masm != NULL);
+//       __ la(x13, dst);
+//       store_check(masm, x13, t0);
+//     }
+//   }
+// }

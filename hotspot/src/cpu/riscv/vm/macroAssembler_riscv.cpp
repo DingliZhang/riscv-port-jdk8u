@@ -528,26 +528,26 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
    }
 }
 
-void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
-  Label done, not_weak;
-  beqz(value, done);           // Use NULL as-is.
+// void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
+//   Label done, not_weak;
+//   beqz(value, done);           // Use NULL as-is.
 
-  // Test for jweak tag.
-  andi(t0, value, JNIHandles::weak_tag_mask);
-  beqz(t0, not_weak);
+//   // Test for jweak tag.
+//   andi(t0, value, JNIHandles::weak_tag_mask);
+//   beqz(t0, not_weak);
 
-  // Resolve jweak.
-  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
-                 Address(value, -JNIHandles::weak_tag_value), tmp, thread);  //TODO-RISCV64
-  verify_oop(value);
-  j(done);
+//   // Resolve jweak.
+//   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
+//                  Address(value, -JNIHandles::weak_tag_value), tmp, thread);  //TODO-RISCV64
+//   verify_oop(value);
+//   j(done);
 
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
-  verify_oop(value);
-  bind(done);
-}
+//   bind(not_weak);
+//   // Resolve (untagged) jobject.
+//   access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
+//   verify_oop(value);
+//   bind(done);
+// }
 
 void MacroAssembler::stop(const char* msg) {
   address ip = pc();
@@ -1789,37 +1789,42 @@ void MacroAssembler::store_check(Register obj, Address dst) {
 }
 
 void MacroAssembler::store_check(Register obj) {
+  store_check(obj, t0);
+}
+
+void MacroAssembler::store_check(Register obj, Register tmp) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
 
-  // TODO-RISCV64
-  // BarrierSet* bs = Universe::heap()->barrier_set();
-  // assert(bs->kind() == BarrierSet::CardTableBarrierSet,
-  //        "Wrong barrier set kind");
+  // TODO-RISCV64 needed to be check
+  assert_different_registers(obj, tmp);
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
 
-  // CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  // CardTable* ct = ctbs->card_table();
-  // assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  // lsr(obj, obj, CardTable::card_shift);
+  __ srli(obj, obj, CardTable::card_shift);
 
-  // assert(CardTable::dirty_card_val() == 0, "must be");
+  assert(CardTable::dirty_card_val() == 0, "must be");
 
-  // load_byte_map_base(rscratch1);
+  __ load_byte_map_base(tmp);
+  __ add(tmp, obj, tmp);
 
-  // if (UseCondCardMark) {
-  //   Label L_already_dirty;
-  //   membar(StoreLoad);
-  //   ldrb(rscratch2,  Address(obj, rscratch1));
-  //   cbz(rscratch2, L_already_dirty);
-  //   strb(zr, Address(obj, rscratch1));
-  //   bind(L_already_dirty);
-  // } else {
-  //   if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
-  //     membar(StoreStore);
-  //   }
-  //   strb(zr, Address(obj, rscratch1));
-  // }
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ membar(MacroAssembler::StoreLoad);
+    __ lbu(t1,  Address(tmp));
+    __ beqz(t1, L_already_dirty);
+    __ sb(zr, Address(tmp));
+    __ bind(L_already_dirty);
+  } else {
+    if (ct->scanned_concurrently()) {
+      __ membar(MacroAssembler::StoreStore);
+    }
+    __ sb(zr, Address(tmp));
+  }
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
@@ -1993,85 +1998,66 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   // directly to skip generating the check by
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
 
-  // TODO-RISCV64
-  // assert(thread == rthread, "must be");
+  // TODO-RISCV64 needed to be check
+  assert_cond(masm != NULL);
+  assert(thread == xthread, "must be");
 
-  // Label done;
-  // Label runtime;
+  Label done;
+  Label runtime;
 
-  // assert_different_registers(obj, pre_val, tmp, rscratch1);
-  // assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
+  assert_different_registers(obj, pre_val, tmp, t0);
+  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
 
-  // Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-  //                                      SATBMarkQueue::byte_offset_of_active()));
-  // Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-  //                                      SATBMarkQueue::byte_offset_of_index()));
-  // Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-  //                                      SATBMarkQueue::byte_offset_of_buf()));
+  Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
+  // Is marking active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) { // 4-byte width
+    __ lwu(tmp, in_progress);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ lbu(tmp, in_progress);
+  }
+  __ beqz(tmp, done);
 
-  // // Is marking active?
-  // if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-  //   ldrw(tmp, in_progress);
-  // } else {
-  //   assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-  //   ldrb(tmp, in_progress);
-  // }
-  // cbzw(tmp, done);
+  // Do we need to load the previous value?
+  if (obj != noreg) {
+    __ load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
+  }
 
-  // // Do we need to load the previous value?
-  // if (obj != noreg) {
-  //   load_heap_oop(pre_val, Address(obj, 0));
-  // }
+  // Is the previous value null?
+  __ beqz(pre_val, done);
 
-  // // Is the previous value null?
-  // cbz(pre_val, done);
+  // Can we store original value in the thread's buffer?
+  // Is index == 0?
+  // (The index field is typed as size_t.)
 
-  // // Can we store original value in the thread's buffer?
-  // // Is index == 0?
-  // // (The index field is typed as size_t.)
+  __ ld(tmp, index);                       // tmp := *index_adr
+  __ beqz(tmp, runtime);                   // tmp == 0?
+                                           // If yes, goto runtime
 
-  // ldr(tmp, index);                      // tmp := *index_adr
-  // cbz(tmp, runtime);                    // tmp == 0?
-  //                                       // If yes, goto runtime
+  __ sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
+  __ sd(tmp, index);                       // *index_adr := tmp
+  __ ld(t0, buffer);
+  __ add(tmp, tmp, t0);                    // tmp := tmp + *buffer_adr
 
-  // sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  // str(tmp, index);                      // *index_adr := tmp
-  // ldr(rscratch1, buffer);
-  // add(tmp, tmp, rscratch1);             // tmp := tmp + *buffer_adr
+  // Record the previous value
+  __ sd(pre_val, Address(tmp, 0));
+  __ j(done);
 
-  // // Record the previous value
-  // str(pre_val, Address(tmp, 0));
-  // b(done);
+  __ bind(runtime);
 
-  // bind(runtime);
-  // // save the live input values
-  // push(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
+  __ push_call_clobbered_registers();
+  if (expand_call) {
+    assert(pre_val != c_rarg1, "smashed arg");
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
+  }
+  __ pop_call_clobbered_registers();
 
-  // // Calling the runtime using the regular call_VM_leaf mechanism generates
-  // // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
-  // // that checks that the *(rfp+frame::interpreter_frame_last_sp) == NULL.
-  // //
-  // // If we care generating the pre-barrier without a frame (e.g. in the
-  // // intrinsified Reference.get() routine) then ebp might be pointing to
-  // // the caller frame and so this check will most likely fail at runtime.
-  // //
-  // // Expanding the call directly bypasses the generation of the check.
-  // // So when we do not have have a full interpreter frame on the stack
-  // // expand_call should be passed true.
-
-  // if (expand_call) {
-  //   assert(pre_val != c_rarg1, "smashed arg");
-  //   pass_arg1(this, thread);
-  //   pass_arg0(this, pre_val);
-  //   MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), 2);
-  // } else {
-  //   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
-  // }
-
-  // pop(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  // bind(done);
+  __ bind(done);
 }
 
 /*
@@ -2085,79 +2071,79 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                            Register thread,
                                            Register tmp,
                                            Register tmp2) {
-  // TODO-RISCV64
-  // assert(thread == rthread, "must be");
-  // assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
-  //                            rscratch1);
-  // assert(store_addr != noreg && new_val != noreg && tmp != noreg
-  //        && tmp2 != noreg, "expecting a register");
+  // TODO-RISCV64 needed to be check
+  assert(thread == xthread, "must be");
+  assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
+                             t0);
+  assert(store_addr != noreg && new_val != noreg && tmp != noreg &&
+         tmp2 != noreg, "expecting a register");
 
-  // Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-  //                                      DirtyCardQueue::byte_offset_of_index()));
-  // Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-  //                                      DirtyCardQueue::byte_offset_of_buf()));
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-  // BarrierSet* bs = Universe::heap()->barrier_set();
-  // CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  // CardTable* ct = ctbs->card_table();
-  // assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  // Label done;
-  // Label runtime;
+  Label done;
+  Label runtime;
 
-  // // Does store cross heap regions?
+  // Does store cross heap regions?
 
-  // eor(tmp, store_addr, new_val);
-  // lsr(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
-  // cbz(tmp, done);
+  __ xorr(tmp, store_addr, new_val);
+  __ srli(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
+  __ beqz(tmp, done);
 
-  // // crosses regions, storing NULL?
+  // crosses regions, storing NULL?
 
-  // cbz(new_val, done);
+  __ beqz(new_val, done);
 
-  // // storing region crossing non-NULL, is card already dirty?
+  // storing region crossing non-NULL, is card already dirty?
 
-  // ExternalAddress cardtable((address) ct->byte_map_base());
-  // assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-  // const Register card_addr = tmp;
+  ExternalAddress cardtable((address) ct->byte_map_base());
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  const Register card_addr = tmp;
 
-  // lsr(card_addr, store_addr, CardTable::card_shift);
+  __ srli(card_addr, store_addr, CardTable::card_shift);
 
-  // // get the address of the card
-  // load_byte_map_base(tmp2);
-  // add(card_addr, card_addr, tmp2);
-  // ldrb(tmp2, Address(card_addr));
-  // cmpw(tmp2, (int)G1CardTable::g1_young_card_val());
-  // br(Assembler::EQ, done);
+  // get the address of the card
+  __ load_byte_map_base(tmp2);
+  __ add(card_addr, card_addr, tmp2);
+  __ lbu(tmp2, Address(card_addr));
+  __ mv(t0, (int)G1CardTable::g1_young_card_val());
+  __ beq(tmp2, t0, done);
 
-  // assert((int)CardTable::dirty_card_val() == 0, "must be 0");
+  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
 
-  // membar(Assembler::StoreLoad);
+  __ membar(MacroAssembler::StoreLoad);
 
-  // ldrb(tmp2, Address(card_addr));
-  // cbzw(tmp2, done);
+  __ lbu(tmp2, Address(card_addr));
+  __ beqz(tmp2, done);
 
-  // // storing a region crossing, non-NULL oop, card is clean.
-  // // dirty card and log.
+  // storing a region crossing, non-NULL oop, card is clean.
+  // dirty card and log.
 
-  // strb(zr, Address(card_addr));
+  __ sb(zr, Address(card_addr));
 
-  // ldr(rscratch1, queue_index);
-  // cbz(rscratch1, runtime);
-  // sub(rscratch1, rscratch1, wordSize);
-  // str(rscratch1, queue_index);
+  __ ld(t0, queue_index);
+  __ beqz(t0, runtime);
+  __ sub(t0, t0, wordSize);
+  __ sd(t0, queue_index);
 
-  // ldr(tmp2, buffer);
-  // str(card_addr, Address(tmp2, rscratch1));
-  // b(done);
+  __ ld(tmp2, buffer);
+  __ add(t0, tmp2, t0);
+  __ sd(card_addr, Address(t0, 0));
+  __ j(done);
 
-  // bind(runtime);
-  // // save the live input values
-  // push(store_addr->bit(true) | new_val->bit(true), sp);
-  // call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-  // pop(store_addr->bit(true) | new_val->bit(true), sp);
+  __ bind(runtime);
+  // save the live input values
+  RegSet saved = RegSet::of(store_addr, new_val);
+  __ push_reg(saved, sp);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
+  __ pop_reg(saved, sp);
 
-  // bind(done);
+  __ bind(done);
 }
 
 #endif // INCLUDE_ALL_GCS

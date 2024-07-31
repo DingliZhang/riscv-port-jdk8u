@@ -283,6 +283,9 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
   load_heap_oop(result, Address(result, 0));
+  // load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  // // The resulting oop is null if the reference is not yet resolved.
+  // // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
