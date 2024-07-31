@@ -1720,10 +1720,10 @@ SkipIfEqual::~SkipIfEqual() {
 void MacroAssembler::load_heap_oop(Register dst, Address src)
 {
   if (UseCompressedOops) {
-    ldrw(dst, src);
+    lwu(dst, src);  //TODO-RISCV64, imitate from `jump_from_method_handle`in `hotspot/src/cpu/riscv/vm/methodHandles_riscv.cpp`
     decode_heap_oop(dst);
   } else {
-    ldr(dst, src);
+    ld(dst, src);
   }
 }
 
@@ -1742,10 +1742,10 @@ void MacroAssembler::null_check(Register reg, int offset) {
 void MacroAssembler::load_heap_oop_not_null(Register dst, Address src)
 {
   if (UseCompressedOops) {
-    ldrw(dst, src);
+    lwu(dst, src);
     decode_heap_oop_not_null(dst);
   } else {
-    ldr(dst, src);
+    ld(dst, src);
   }
 }
 
