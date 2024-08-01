@@ -2006,9 +2006,9 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
   if (UseCompressedOops) {
     assert(!dst.uses(src), "not enough registers");
     encode_heap_oop(src);
-    strw(src, dst);
+    sw(src, dst);  //imitate from `C2HandleAnonOMOwnerStub::emit` in `src/hotspot/cpu/riscv/c2_CodeStubs_riscv.cpp`
   } else
-    str(src, dst);
+    sd(src, dst);  //imitate from `C2HandleAnonOMOwnerStub::emit` in `src/hotspot/cpu/riscv/c2_CodeStubs_riscv.cpp`
 }
 
 // Used for storing NULLs.
