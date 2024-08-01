@@ -1772,47 +1772,87 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
   }
 }
 
+// void MacroAssembler::store_check(Register obj, Address dst) {
+//   store_check(obj);
+// }
+
+// void MacroAssembler::store_check(Register obj) {
+//   store_check(obj, t0);
+// }
+
+// void MacroAssembler::store_check(Register obj, Register tmp) {
+//   // Does a store check for the oop in register obj. The content of
+//   // register obj is destroyed afterwards.
+
+//   // TODO-RISCV64 needed to be check
+//   assert_different_registers(obj, tmp);
+//   BarrierSet* bs = Universe::heap()->barrier_set();
+//   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
+
+//   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+//   CardTable* ct = ctbs->card_table();
+//   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+//   __ srli(obj, obj, CardTable::card_shift);
+
+//   assert(CardTable::dirty_card_val() == 0, "must be");
+
+//   __ load_byte_map_base(tmp);
+//   __ add(tmp, obj, tmp);
+
+//   if (UseCondCardMark) {
+//     Label L_already_dirty;
+//     __ membar(MacroAssembler::StoreLoad);
+//     __ lbu(t1,  Address(tmp));
+//     __ beqz(t1, L_already_dirty);
+//     __ sb(zr, Address(tmp));
+//     __ bind(L_already_dirty);
+//   } else {
+//     if (ct->scanned_concurrently()) {
+//       __ membar(MacroAssembler::StoreStore);
+//     }
+//     __ sb(zr, Address(tmp));
+//   }
+// }
+
+void MacroAssembler::store_check(Register obj) {
+  // Does a store check for the oop in register obj. The content of
+  // register obj is destroyed afterwards.
+  store_check_part_1(obj);
+  store_check_part_2(obj);
+}
+
 void MacroAssembler::store_check(Register obj, Address dst) {
   store_check(obj);
 }
 
-void MacroAssembler::store_check(Register obj) {
-  store_check(obj, t0);
+// split the store check operation so that other instructions can be scheduled inbetween
+void MacroAssembler::store_check_part_1(Register obj) {
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
+  srli(obj, obj, CardTableModRefBS::card_shift);
 }
 
-void MacroAssembler::store_check(Register obj, Register tmp) {
-  // Does a store check for the oop in register obj. The content of
-  // register obj is destroyed afterwards.
-
-  // TODO-RISCV64 needed to be check
-  assert_different_registers(obj, tmp);
+void MacroAssembler::store_check_part_2(Register obj) {
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
+  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
+  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  // The calculation for byte_map_base is as follows:
+  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  // So this essentially converts an address to a displacement and
+  // it will never need to be relocated.
 
-  __ srli(obj, obj, CardTable::card_shift);
+  // FIXME: It's not likely that disp will fit into an offset so we
+  // don't bother to check, but it could save an instruction.
+  intptr_t disp = (intptr_t) ct->byte_map_base;
+  load_byte_map_base(rscratch1);
 
-  assert(CardTable::dirty_card_val() == 0, "must be");
-
-  __ load_byte_map_base(tmp);
-  __ add(tmp, obj, tmp);
-
-  if (UseCondCardMark) {
-    Label L_already_dirty;
-    __ membar(MacroAssembler::StoreLoad);
-    __ lbu(t1,  Address(tmp));
-    __ beqz(t1, L_already_dirty);
-    __ sb(zr, Address(tmp));
-    __ bind(L_already_dirty);
-  } else {
-    if (ct->scanned_concurrently()) {
-      __ membar(MacroAssembler::StoreStore);
-    }
-    __ sb(zr, Address(tmp));
+  if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+      membar(StoreStore);
   }
+  sb(zr, Address(obj, rscratch1));
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
