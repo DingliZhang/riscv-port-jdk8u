@@ -40,6 +40,13 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
+
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#endif
+
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
@@ -1847,12 +1854,12 @@ void MacroAssembler::store_check_part_2(Register obj) {
   // FIXME: It's not likely that disp will fit into an offset so we
   // don't bother to check, but it could save an instruction.
   intptr_t disp = (intptr_t) ct->byte_map_base;
-  load_byte_map_base(rscratch1);
+  load_byte_map_base(t0);
 
   if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       membar(StoreStore);
   }
-  sb(zr, Address(obj, rscratch1));
+  sb(zr, Address(obj));
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
