@@ -141,6 +141,8 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(val == noreg || val == x10, "parameter is just for looks");
   assert_cond(_masm != NULL);
   // __ store_heap_oop(dst, val, x29, x11, decorators);
+// BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+// bs->store_at(_masm, decorators, T_OBJECT, dst, val, /*tmp1*/ r10, /*tmp2*/ r1);
   //TODO-RISCV64 imitate from jdk8u-aarch64 and `G1BarrierSetAssembler::oop_store_at` in `JDK-8199417.patch.cpp`
 switch (barrier) {
 #if INCLUDE_ALL_GCS
@@ -297,7 +299,8 @@ switch (barrier) {
 //                         Address src,
 //                         Register dst,
 //                         DecoratorSet decorators) {
-//   BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+//   //BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+//   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
 //   bs->load_at(_masm, decorators, T_OBJECT, dst, src, /*tmp1*/ r10, /*tmp_thread*/ r1);
 // }
 

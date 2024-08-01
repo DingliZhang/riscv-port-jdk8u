@@ -132,7 +132,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 
 //   // Do we need to load the previous value?
 //   if (obj != noreg) {
-//     __ load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
+//     __ load_heap_oop(pre_val, Address(obj, 0));
 //   }
 
 //   // Is the previous value null?
@@ -296,7 +296,8 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 //                        false /* expand_call */);
 
 //   if (val == noreg) {
-//     BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), noreg, noreg, noreg);
+//     //BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), noreg, noreg, noreg);
+//      __ store_heap_oop_null(Address(x13, 0));
 //   } else {
 //     // G1 barrier needs uncompressed oop for region cross check.
 //     Register new_val = val;
@@ -304,7 +305,8 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 //       new_val = t1;
 //       __ mv(new_val, val);
 //     }
-//     BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), val, noreg, noreg);
+//     //BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), val, noreg, noreg);
+//     __ store_heap_oop(Address(x13, 0), val);
 //     g1_write_barrier_post(masm,
 //                           x13 /* store_adr */,
 //                           new_val /* new_val */,

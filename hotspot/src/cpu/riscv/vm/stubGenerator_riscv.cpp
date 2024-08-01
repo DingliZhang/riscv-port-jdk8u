@@ -1533,14 +1533,14 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(Address(to, 0), copied_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(Address(to, 0), copied_oop);  // store the oop
     __ add(to, to, UseCompressedOops ? 4 : 8);
     __ sub(count, count, 1);
     __ beqz(count, L_do_card_marks);
 
     // ======== loop entry is here ========
     __ BIND(L_load_element);
-    __ load_heap_oop(copied_oop, Address(from, 0), noreg, noreg, AS_RAW); // load the oop
+    __ load_heap_oop(copied_oop, Address(from, 0)); // load the oop
     __ add(from, from, UseCompressedOops ? 4 : 8);
     __ beqz(copied_oop, L_store_element);
 

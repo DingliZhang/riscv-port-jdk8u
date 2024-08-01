@@ -41,21 +41,22 @@
 
 //   bool in_heap = (decorators & IN_HEAP) != 0;
 //   bool in_native = (decorators & IN_NATIVE) != 0;
-//   bool is_not_null = (decorators & IS_NOT_NULL) != 0;
+//   //bool is_not_null = (decorators & IS_NOT_NULL) != 0;
 //   switch (type) {
 //     case T_OBJECT:  // fall through
 //     case T_ARRAY: {
 //       if (in_heap) {
-//         if (UseCompressedOops) {
-//           __ lwu(dst, src);
-//           if (is_not_null) {
-//             __ decode_heap_oop_not_null(dst);
-//           } else {
-//             __ decode_heap_oop(dst);
-//           }
-//         } else {
-//           __ ld(dst, src);
-//         }
+//         __ load_heap_oop(dst, src);   
+//         //if (UseCompressedOops) {
+//         //  __ lwu(dst, src);
+//         //  if (is_not_null) {
+//         //    __ decode_heap_oop_not_null(dst);
+//         //  } else {
+//         //    __ decode_heap_oop(dst);
+//         //  }
+//         //} else {
+//         //  __ ld(dst, src);
+//         //}
 //       } else {
 //         assert(in_native, "why else?");
 //         __ ld(dst, src);
@@ -83,17 +84,18 @@
 //   switch (type) {
 //     case T_OBJECT: // fall through
 //     case T_ARRAY: {
-//       val = val == noreg ? zr : val;
+//       //val = val == noreg ? zr : val;
 //       if (in_heap) {
-//         if (UseCompressedOops) {
-//           assert(!dst.uses(val), "not enough registers");
-//           if (val != zr) {
-//             __ encode_heap_oop(val);
-//           }
-//           __ sw(val, dst);
-//         } else {
-//           __ sd(val, dst);
-//         }
+//         __ store_heap_oop(dst, val);
+//         //if (UseCompressedOops) {
+//         //  assert(!dst.uses(val), "not enough registers");
+//         //  if (val != zr) {
+//         //    __ encode_heap_oop(val);
+//         //  }
+//         //  __ sw(val, dst);
+//         //} else {
+//         //  __ sd(val, dst);
+//         //}
 //       } else {
 //         assert(in_native, "why else?");
 //         __ sd(val, dst);
