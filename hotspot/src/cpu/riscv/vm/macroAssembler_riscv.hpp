@@ -177,6 +177,24 @@ class MacroAssembler: public Assembler {
   // Stores
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
+
+#if INCLUDE_ALL_GCS
+
+  void g1_write_barrier_pre(Register obj,
+                            Register pre_val,
+                            Register thread,
+                            Register tmp,
+                            bool tosca_live,
+                            bool expand_call);
+
+  void g1_write_barrier_post(Register store_addr,
+                             Register new_val,
+                             Register thread,
+                             Register tmp,
+                             Register tmp2);
+
+#endif // INCLUDE_ALL_GCS
+
   // split store_check(Register obj) to enhance instruction interleaving
   void store_check_part_1(Register obj);
   void store_check_part_2(Register obj);
