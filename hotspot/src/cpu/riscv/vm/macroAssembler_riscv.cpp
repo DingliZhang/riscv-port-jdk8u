@@ -2051,51 +2051,51 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
                                        PtrQueue::byte_offset_of_buf()));
 
   // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) { // 4-byte width
-    __ lwu(tmp, in_progress);
+  if (iin_bytes(PtrQueue::byte_width_of_active()) == 4) { // 4-byte width
+    lwu(tmp, in_progress);
   } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbu(tmp, in_progress);
+    assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
+    lbu(tmp, in_progress);
   }
-  __ beqz(tmp, done);
+  beqz(tmp, done);
 
   // Do we need to load the previous value?
   if (obj != noreg) {
-    __ load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
+    load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
   }
 
   // Is the previous value null?
-  __ beqz(pre_val, done);
+  beqz(pre_val, done);
 
   // Can we store original value in the thread's buffer?
   // Is index == 0?
   // (The index field is typed as size_t.)
 
-  __ ld(tmp, index);                       // tmp := *index_adr
-  __ beqz(tmp, runtime);                   // tmp == 0?
+  ld(tmp, index);                       // tmp := *index_adr
+  beqz(tmp, runtime);                   // tmp == 0?
                                            // If yes, goto runtime
 
-  __ sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  __ sd(tmp, index);                       // *index_adr := tmp
-  __ ld(t0, buffer);
-  __ add(tmp, tmp, t0);                    // tmp := tmp + *buffer_adr
+  sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
+  sd(tmp, index);                       // *index_adr := tmp
+  ld(t0, buffer);
+  add(tmp, tmp, t0);                    // tmp := tmp + *buffer_adr
 
   // Record the previous value
-  __ sd(pre_val, Address(tmp, 0));
-  __ j(done);
+  sd(pre_val, Address(tmp, 0));
+  j(done);
 
-  __ bind(runtime);
+  bind(runtime);
 
-  __ push_call_clobbered_registers();
+  push_call_clobbered_registers();
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
+    super_call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
   }
-  __ pop_call_clobbered_registers();
+  pop_call_clobbered_registers();
 
-  __ bind(done);
+  bind(done);
 }
 
 /*
@@ -2129,13 +2129,13 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   // Does store cross heap regions?
 
-  __ xorr(tmp, store_addr, new_val);
-  __ srli(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
-  __ beqz(tmp, done);
+  xorr(tmp, store_addr, new_val);
+  srli(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
+  beqz(tmp, done);
 
   // crosses regions, storing NULL?
 
-  __ beqz(new_val, done);
+  beqz(new_val, done);
 
   // storing region crossing non-NULL, is card already dirty?
 
@@ -2143,45 +2143,45 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
   const Register card_addr = tmp;
 
-  __ srli(card_addr, store_addr, CardTable::card_shift);
+  srli(card_addr, store_addr, CardTable::card_shift);
 
   // get the address of the card
-  __ load_byte_map_base(tmp2);
-  __ add(card_addr, card_addr, tmp2);
-  __ lbu(tmp2, Address(card_addr));
-  __ mv(t0, (int)G1CardTable::g1_young_card_val());
-  __ beq(tmp2, t0, done);
+  load_byte_map_base(tmp2);
+  add(card_addr, card_addr, tmp2);
+  lbu(tmp2, Address(card_addr));
+  mv(t0, (int)G1CardTable::g1_young_card_val());
+  beq(tmp2, t0, done);
 
   assert((int)CardTable::dirty_card_val() == 0, "must be 0");
 
-  __ membar(MacroAssembler::StoreLoad);
+  membar(MacroAssembler::StoreLoad);
 
-  __ lbu(tmp2, Address(card_addr));
-  __ beqz(tmp2, done);
+  lbu(tmp2, Address(card_addr));
+  beqz(tmp2, done);
 
   // storing a region crossing, non-NULL oop, card is clean.
   // dirty card and log.
 
-  __ sb(zr, Address(card_addr));
+  sb(zr, Address(card_addr));
 
-  __ ld(t0, queue_index);
-  __ beqz(t0, runtime);
-  __ sub(t0, t0, wordSize);
-  __ sd(t0, queue_index);
+  ld(t0, queue_index);
+  beqz(t0, runtime);
+  sub(t0, t0, wordSize);
+  sd(t0, queue_index);
 
-  __ ld(tmp2, buffer);
-  __ add(t0, tmp2, t0);
-  __ sd(card_addr, Address(t0, 0));
-  __ j(done);
+  ld(tmp2, buffer);
+  add(t0, tmp2, t0);
+  sd(card_addr, Address(t0, 0));
+  j(done);
 
-  __ bind(runtime);
+  bind(runtime);
   // save the live input values
   RegSet saved = RegSet::of(store_addr, new_val);
-  __ push_reg(saved, sp);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
-  __ pop_reg(saved, sp);
+  push_reg(saved, sp);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
+  pop_reg(saved, sp);
 
-  __ bind(done);
+  bind(done);
 }
 
 #endif // INCLUDE_ALL_GCS
