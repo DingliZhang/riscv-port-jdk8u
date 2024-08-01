@@ -174,6 +174,11 @@ class MacroAssembler: public Assembler {
   // thread in the default location (r15_thread on 64bit)
   void reset_last_Java_frame(bool clear_fp, bool clear_pc);
 
+  // Stores
+  void store_check(Register obj);                // store check for obj - register is destroyed afterwards
+  void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
+  void store_check(Register obj, Register tmp);
+
   void call_native(address entry_point,
                    Register arg_0);
   void call_native_base(
