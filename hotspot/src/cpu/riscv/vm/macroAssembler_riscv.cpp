@@ -2051,7 +2051,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
                                        PtrQueue::byte_offset_of_buf()));
 
   // Is marking active?
-  if (iin_bytes(PtrQueue::byte_width_of_active()) == 4) { // 4-byte width
+  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) { // 4-byte width
     lwu(tmp, in_progress);
   } else {
     assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
@@ -2061,7 +2061,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
 
   // Do we need to load the previous value?
   if (obj != noreg) {
-    load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
+    load_heap_oop(pre_val, Address(obj, 0));
   }
 
   // Is the previous value null?
