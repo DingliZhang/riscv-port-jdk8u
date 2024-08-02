@@ -2263,7 +2263,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   int vte_size    = vtableEntry::size() * wordSize;
   assert(vte_size == wordSize, "else adjust times_vte_scale");
 
-  lwu(scan_tmp, Address(recv_klass, Klass::vtable_length_offset() * wordSize));
+  lwu(scan_tmp, Address(recv_klass, InstanceKlass::vtable_length_offset() * wordSize));
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   shadd(scan_tmp, scan_tmp, recv_klass, scan_tmp, 3);
