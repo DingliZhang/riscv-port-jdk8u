@@ -2118,13 +2118,14 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   assert(store_addr != noreg && new_val != noreg && tmp != noreg &&
          tmp2 != noreg, "expecting a register");
 
-  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
-  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
+  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                       PtrQueue::byte_offset_of_index()));
+  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                       PtrQueue::byte_offset_of_buf()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
   Label done;
   Label runtime;
@@ -2141,17 +2142,17 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   // storing region crossing non-NULL, is card already dirty?
 
-  ExternalAddress cardtable((address) ct->byte_map_base());
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  ExternalAddress cardtable((address) ct->byte_map_base);
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
   const Register card_addr = tmp;
 
-  srli(card_addr, store_addr, CardTable::card_shift);
+  srli(card_addr, store_addr, CardTableModRefBS::card_shift);
 
   // get the address of the card
   load_byte_map_base(tmp2);
   add(card_addr, card_addr, tmp2);
   lbu(tmp2, Address(card_addr));
-  mv(t0, (int)G1CardTable::g1_young_card_val());
+  mv(t0, (int)G1SATBCardTableModRefBS::g1_young_card_val());
   beq(tmp2, t0, done);
 
   assert((int)CardTable::dirty_card_val() == 0, "must be 0");
