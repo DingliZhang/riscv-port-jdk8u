@@ -2089,9 +2089,11 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   push_call_clobbered_registers();
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
-    super_call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
+    pass_arg1(this, thread);
+    pass_arg0(this, pre_val);
+    MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), 2);  //TODO-RISCV64 copy from aarch64
   } else {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);  //TODO-RISCV64 copy from aarch64
   }
   pop_call_clobbered_registers();
 
@@ -2178,7 +2180,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   // save the live input values
   RegSet saved = RegSet::of(store_addr, new_val);
   push_reg(saved, sp);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
+  // call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);  //TODO-RISCV64 copy from aarch64
   pop_reg(saved, sp);
 
   bind(done);
