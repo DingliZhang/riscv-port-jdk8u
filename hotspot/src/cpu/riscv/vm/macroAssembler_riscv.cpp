@@ -2257,7 +2257,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must be same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
-  int vtable_base = in_bytes(Klass::vtable_start_offset());
+  int vtable_base = in_bytes(InstanceKlass::vtable_start_offset());
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
@@ -2310,7 +2310,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const int base = in_bytes(InstanceKlass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
   int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
