@@ -4380,7 +4380,7 @@ void MacroAssembler::eden_allocate(Register obj,
     sc_d(t1, end, t0, Assembler::rl);
     bnez(t1, retry);
 
-    incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, tmp1);  //needed?
+    // incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, tmp1);  //needed?
   }
 }
 
