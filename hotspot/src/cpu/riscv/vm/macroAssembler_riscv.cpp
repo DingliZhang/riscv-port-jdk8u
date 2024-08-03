@@ -3254,15 +3254,14 @@ void MacroAssembler::biased_locking_exit(Register obj_reg, Register tmp_reg, Lab
 void MacroAssembler::read_polling_page(Register dest, address page, relocInfo::relocType rtype) {
   int32_t offset = 0;
   // get_polling_page(dest, page, offset, rtype);
-  // read_polling_page(dest, offset, rtype);
-  unsigned long off;
   uint64_t align = (uint64_t)page & 0xfff;
   assert(align == 0, "polling page must be page aligned");
   la_patchable(dest, Address(page, rtype), offset);
   InstructionMark im(this);
-  code_section()->relocate(pc(), rtype);
-  lwu(zr, Address(dest, offset));
-  return inst_mark();
+  // code_section()->relocate(pc(), rtype);
+  // lwu(zr, Address(dest, offset));
+  // return inst_mark();
+  read_polling_page(dest, offset, rtype);
 }
 
 void MacroAssembler::read_polling_page(Register dest, int32_t offset, relocInfo::relocType rtype) {
