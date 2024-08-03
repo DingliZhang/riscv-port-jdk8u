@@ -2651,6 +2651,24 @@ ATOMIC_XCHG(xchgalw, amoswap_w, Assembler::aq, Assembler::rl)
 
 #undef ATOMIC_XCHG
 
+void MacroAssembler::incr_allocated_bytes(Register thread,
+                                               Register var_size_in_bytes,
+                                               int con_size_in_bytes,
+                                               Register tmp1) {
+  if (!thread->is_valid()) {
+    thread = xthread;
+  }
+  assert(tmp1->is_valid(), "need temp reg");
+
+  ld(tmp1, Address(thread, in_bytes(JavaThread::allocated_bytes_offset())));
+  if (var_size_in_bytes->is_valid()) {
+    add(tmp1, tmp1, var_size_in_bytes);
+  } else {
+    add(tmp1, tmp1, con_size_in_bytes);
+  }
+  sd(tmp1, Address(thread, in_bytes(JavaThread::allocated_bytes_offset())));
+}
+
 #define ATOMIC_XCHGU(OP1, OP2)                                                       \
 void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
   atomic_##OP2(prev, newv, addr);                                                    \
@@ -2880,6 +2898,19 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+// // Defines obj, preserves var_size_in_bytes, okay for tmp2 == var_size_in_bytes.
+// void MacroAssembler::tlab_allocate(Register obj,
+//                                    Register var_size_in_bytes,
+//                                    int con_size_in_bytes,
+//                                    Register tmp1,
+//                                    Register tmp2,
+//                                    Label& slow_case,
+//                                    bool is_far) {
+//   BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+//   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp1, tmp2, slow_case, is_far);
+// }
+
+//TODO-RISCV64 imitate from aarch64
 // Defines obj, preserves var_size_in_bytes, okay for tmp2 == var_size_in_bytes.
 void MacroAssembler::tlab_allocate(Register obj,
                                    Register var_size_in_bytes,
@@ -2888,20 +2919,38 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Register tmp2,
                                    Label& slow_case,
                                    bool is_far) {
-  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
-  bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp1, tmp2, slow_case, is_far);
+  assert_different_registers(obj, tmp2);
+  assert_different_registers(obj, var_size_in_bytes);
+  Register end = tmp2;
+
+  ld(obj, Address(xthread, JavaThread::tlab_top_offset()));
+  if (var_size_in_bytes == noreg) {
+    la(end, Address(obj, con_size_in_bytes));
+  } else {
+    add(end, obj, var_size_in_bytes);
+  }
+  ld(t0, Address(xthread, JavaThread::tlab_end_offset()));
+  bgtu(end, t0, slow_case, is_far);
+
+  // update the tlab top pointer
+  sd(end, Address(xthread, JavaThread::tlab_top_offset()));
+
+  // recover var_size_in_bytes if necessary
+  if (var_size_in_bytes == end) {
+    sub(var_size_in_bytes, var_size_in_bytes, obj);
+  }
 }
 
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register tmp,
-                                   Label& slow_case,
-                                   bool is_far) {
-  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp, slow_case, is_far);
-}
+// // Defines obj, preserves var_size_in_bytes
+// void MacroAssembler::eden_allocate(Register obj,
+//                                    Register var_size_in_bytes,
+//                                    int con_size_in_bytes,
+//                                    Register tmp,
+//                                    Label& slow_case,
+//                                    bool is_far) {
+//   BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+//   bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp, slow_case, is_far);
+// }
 
 
 // get_thread() can be called anywhere inside generated code so we
@@ -4300,6 +4349,59 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   bind(entry);
   add(tmp, tmp, unroll * wordSize);
   bnez(len, loop);
+}
+
+//TODO-RISCV64 imitate from aarch64
+// Defines obj, preserves var_size_in_bytes
+void MacroAssembler::eden_allocate(Register obj,
+                                        Register var_size_in_bytes,
+                                        int con_size_in_bytes,
+                                        Register tmp1,
+                                        Label& slow_case,
+                                        bool is_far) {
+  assert_different_registers(obj, var_size_in_bytes, tmp1);
+  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+    j(slow_case);
+  } else {
+    Register end = tmp1;
+    Label retry;
+    bind(retry);
+
+    // Get the current end of the heap
+    ExternalAddress address_end((address) Universe::heap()->end_addr());
+    {
+      int32_t offset;
+      la_patchable(t1, address_end, offset);
+      ld(t1, Address(t1, offset));
+    }
+
+    // Get the current top of the heap
+    ExternalAddress address_top((address) Universe::heap()->top_addr());
+    {
+      int32_t offset;
+      la_patchable(t0, address_top, offset);
+      addi(t0, t0, offset);
+      lr_d(obj, t0, Assembler::aqrl);
+    }
+
+    // Adjust it my the size of our new object
+    if (var_size_in_bytes == noreg) {
+      la(end, Address(obj, con_size_in_bytes));
+    } else {
+      add(end, obj, var_size_in_bytes);
+    }
+
+    // if end < obj then we wrapped around high memory
+    bltu(end, obj, slow_case, is_far);
+
+    bgtu(end, t1, slow_case, is_far);
+
+    // If heap_top hasn't been changed by some other thread, update it.
+    sc_d(t1, end, t0, Assembler::rl);
+    bnez(t1, retry);
+
+    incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, tmp1);  //needed?
+  }
 }
 
 // shift left by shamt and add

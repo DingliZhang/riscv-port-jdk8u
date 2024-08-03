@@ -3750,7 +3750,8 @@ void TemplateTable::_new() {
     //
     // x13: instance size in bytes
     if (allow_shared_alloc) {
-      __ eden_allocate(x10, x13, 0, x28, slow_case);
+      // __ eden_allocate(x10, x13, 0, x28, slow_case);
+      __ incr_allocated_bytes(x10, x13, 0, x28, slow_case);
     }
   }
 

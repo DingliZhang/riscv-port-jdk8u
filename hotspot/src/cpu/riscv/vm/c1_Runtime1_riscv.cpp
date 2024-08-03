@@ -748,6 +748,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ lwu(obj_size, Address(klass, Klass::layout_helper_offset()));
 
           __ eden_allocate(obj, obj_size, 0, tmp1, slow_path);
+          __ incr_allocated_bytes(xthread, obj_size, 0, t0);
 
           __ initialize_object(obj, klass, obj_size, 0, tmp1, tmp2, /* is_tlab_allocated */ false);
           __ verify_oop(obj);
@@ -859,6 +860,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ andi(arr_size, arr_size, ~(uint)MinObjAlignmentInBytesMask);
 
           __ eden_allocate(obj, arr_size, 0, tmp1, slow_path); // preserves arr_size
+          __ incr_allocated_bytes(xthread, arr_size, 0, t0);
 
           __ initialize_header(obj, klass, length, tmp1, tmp2);
           __ lbu(tmp1, Address(klass,
