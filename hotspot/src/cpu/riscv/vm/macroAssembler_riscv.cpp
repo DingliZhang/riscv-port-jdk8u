@@ -2326,16 +2326,14 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 
 void MacroAssembler::membar(uint32_t order_constraint) {
   address prev = pc() - NativeMembar::instruction_size;
-  address last = code()->last_insn();
-
-  if (last != NULL && nativeInstruction_at(last)->is_membar() && prev == last) {
+  if (prev == code()->last_membar()) {
     NativeMembar *bar = NativeMembar_at(prev);
     // We are merging two memory barrier instructions.  On RISCV we
     // can do this simply by ORing them together.
     bar->set_kind(bar->get_kind() | order_constraint);
     BLOCK_COMMENT("merged membar");
   } else {
-    code()->set_last_insn(pc());
+    code()->set_last_membar(pc());
 
     uint32_t predecessor = 0;
     uint32_t successor = 0;
