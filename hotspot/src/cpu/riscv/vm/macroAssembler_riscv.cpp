@@ -3301,25 +3301,6 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   zero_extend(dst, dst, 32);
 }
 
-void MacroAssembler::load_heap_oop_not_null(Register dst, Address src)  //TODO-RISCV64, imitate from aarch64
-{
-  if (UseCompressedOops) {
-    lwu(dst, src);
-    decode_heap_oop_not_null(dst);
-  } else {
-    lr(dst, src);
-  }
-}
-
-void MacroAssembler::store_heap_oop(Address dst, Register src) {  //TODO-RISCV64, imitate from aarch64
-  if (UseCompressedOops) {
-    assert(!dst.uses(src), "not enough registers");
-    encode_heap_oop(src);
-    sw(src, dst);
-  } else
-    sd(src, dst);
-}
-
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {  //TODO-RISCV64, imitate from aarch64
   if (UseCompressedOops) {
