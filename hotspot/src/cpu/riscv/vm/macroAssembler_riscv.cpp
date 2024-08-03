@@ -2975,7 +2975,7 @@ void MacroAssembler::get_thread(Register thread) {
 
 void MacroAssembler::load_byte_map_base(Register reg) {
   jbyte *byte_map_base =
-    ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base();
+    ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base;
   li(reg, (uint64_t)byte_map_base);
 }
 
