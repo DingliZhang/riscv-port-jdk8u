@@ -4692,7 +4692,7 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
                                        Register tmp5, Register tmp6,
                                        Register result, int ae)
 {
-  assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
+  // assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
 
   Label LINEARSEARCH, LINEARSTUB, DONE, NOMATCH;
 
@@ -4702,18 +4702,18 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   Register hlen_tmp = tmp2; // haystack len tmp
   Register result_tmp = tmp4;
 
-  bool isLL = ae == StrIntrinsicNode::LL;
+  // bool isLL = ae == StrIntrinsicNode::LL;
 
-  bool needle_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UL;
-  bool haystack_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::LU;
-  int needle_chr_shift = needle_isL ? 0 : 1;
-  int haystack_chr_shift = haystack_isL ? 0 : 1;
-  int needle_chr_size = needle_isL ? 1 : 2;
-  int haystack_chr_size = haystack_isL ? 1 : 2;
-  load_chr_insn needle_load_1chr = needle_isL ? (load_chr_insn)&MacroAssembler::lbu :
-                                   (load_chr_insn)&MacroAssembler::lhu;
-  load_chr_insn haystack_load_1chr = haystack_isL ? (load_chr_insn)&MacroAssembler::lbu :
-                                     (load_chr_insn)&MacroAssembler::lhu;
+  // bool needle_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UL;
+  // bool haystack_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::LU;
+  // int needle_chr_shift = needle_isL ? 0 : 1;
+  // int haystack_chr_shift = haystack_isL ? 0 : 1;
+  // int needle_chr_size = needle_isL ? 1 : 2;
+  // int haystack_chr_size = haystack_isL ? 1 : 2;
+  // load_chr_insn needle_load_1chr = needle_isL ? (load_chr_insn)&MacroAssembler::lbu :
+  //                                  (load_chr_insn)&MacroAssembler::lhu;
+  // load_chr_insn haystack_load_1chr = haystack_isL ? (load_chr_insn)&MacroAssembler::lbu :
+  //                                    (load_chr_insn)&MacroAssembler::lhu;
 
   BLOCK_COMMENT("string_indexof {");
 
@@ -4820,7 +4820,7 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   // UTF->Latin1 conversion is not needed(8 LL or 4UU) and half register for
   // UL case. We'll re-read last character in inner pre-loop code to have
   // single outer pre-loop load
-  const int firstStep = isLL ? 7 : 3;
+  const int firstStep = 3;
 
   const int ASIZE = 256;
   const int STORE_BYTES = 8; // 8 bytes stored per instruction(sd)
@@ -4852,7 +4852,7 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   Register orig_haystack = tmp5;
   mv(orig_haystack, haystack);
   // result_tmp = tmp4
-  shadd(haystack_end, result_tmp, haystack, haystack_end, haystack_chr_shift);
+  shadd(haystack_end, result_tmp, haystack, haystack_end, 1);
   sub(ch2, needle_len, 1); // bc offset init value, ch2 is t1
   mv(tmp3, needle);
 
@@ -4867,13 +4867,14 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   //    #endif
   //  }
   bind(BCLOOP);
-  (this->*needle_load_1chr)(ch1, Address(tmp3), noreg);
-  add(tmp3, tmp3, needle_chr_size);
-  if (!needle_isL) {
+  // (this->*needle_load_1chr)(ch1, Address(tmp3), noreg);
+  lbu(ch1, Address(tmp3));
+  add(tmp3, tmp3, 8);
+  // if (!needle_isL) {
     // ae == StrIntrinsicNode::UU
     mv(tmp6, ASIZE);
     bgeu(ch1, tmp6, BCSKIP);
-  }
+  // }
   add(tmp4, sp, ch1);
   sb(ch2, Address(tmp4)); // store skip offset to BC offset table
 
@@ -4882,28 +4883,28 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   bgtz(ch2, BCLOOP);
 
   // tmp6: pattern end, address after needle
-  shadd(tmp6, needle_len, needle, tmp6, needle_chr_shift);
-  if (needle_isL == haystack_isL) {
+  shadd(tmp6, needle_len, needle, tmp6, 1);
+  // if (needle_isL == haystack_isL) {
     // load last 8 bytes (8LL/4UU symbols)
     ld(tmp6, Address(tmp6, -wordSize));
-  } else {
-    // UL: from UTF-16(source) search Latin1(pattern)
-    lwu(tmp6, Address(tmp6, -wordSize / 2)); // load last 4 bytes(4 symbols)
-    // convert Latin1 to UTF. eg: 0x0000abcd -> 0x0a0b0c0d
-    // We'll have to wait until load completed, but it's still faster than per-character loads+checks
-    srli(tmp3, tmp6, BitsPerByte * (wordSize / 2 - needle_chr_size)); // pattern[m-1], eg:0x0000000a
-    slli(ch2, tmp6, XLEN - 24);
-    srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
-    slli(ch1, tmp6, XLEN - 16);
-    srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
-    andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
-    slli(ch2, ch2, 16);
-    orr(ch2, ch2, ch1); // 0x00000b0c
-    slli(result, tmp3, 48); // use result as temp register
-    orr(tmp6, tmp6, result); // 0x0a00000d
-    slli(result, ch2, 16);
-    orr(tmp6, tmp6, result); // UTF-16:0x0a0b0c0d
-  }
+  // } else {
+  //   // UL: from UTF-16(source) search Latin1(pattern)
+  //   lwu(tmp6, Address(tmp6, -wordSize / 2)); // load last 4 bytes(4 symbols)
+  //   // convert Latin1 to UTF. eg: 0x0000abcd -> 0x0a0b0c0d
+  //   // We'll have to wait until load completed, but it's still faster than per-character loads+checks
+  //   srli(tmp3, tmp6, BitsPerByte * (wordSize / 2 - 8)); // pattern[m-1], eg:0x0000000a
+  //   slli(ch2, tmp6, XLEN - 24);
+  //   srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
+  //   slli(ch1, tmp6, XLEN - 16);
+  //   srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
+  //   andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
+  //   slli(ch2, ch2, 16);
+  //   orr(ch2, ch2, ch1); // 0x00000b0c
+  //   slli(result, tmp3, 48); // use result as temp register
+  //   orr(tmp6, tmp6, result); // 0x0a00000d
+  //   slli(result, ch2, 16);
+  //   orr(tmp6, tmp6, result); // UTF-16:0x0a0b0c0d
+  // }
 
   // i = m - 1;
   // skipch = j + i;
@@ -4913,34 +4914,37 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   //   move j with bad char offset table
   bind(BMLOOPSTR2);
   // compare pattern to source string backward
-  shadd(result, nlen_tmp, haystack, result, haystack_chr_shift);
-  (this->*haystack_load_1chr)(skipch, Address(result), noreg);
+  shadd(result, nlen_tmp, haystack, result, 1);
+  // (this->*haystack_load_1chr)(skipch, Address(result), noreg);
+  lhu(skipch, Address(result));
   sub(nlen_tmp, nlen_tmp, firstStep); // nlen_tmp is positive here, because needle_len >= 8
-  if (needle_isL == haystack_isL) {
-    // re-init tmp3. It's for free because it's executed in parallel with
-    // load above. Alternative is to initialize it before loop, but it'll
-    // affect performance on in-order systems with 2 or more ld/st pipelines
-    srli(tmp3, tmp6, BitsPerByte * (wordSize - needle_chr_size)); // UU/LL: pattern[m-1]
-  }
-  if (!isLL) { // UU/UL case
-    slli(ch2, nlen_tmp, 1); // offsets in bytes
-  }
+  // if (needle_isL == haystack_isL) {
+  //   // re-init tmp3. It's for free because it's executed in parallel with
+  //   // load above. Alternative is to initialize it before loop, but it'll
+  //   // affect performance on in-order systems with 2 or more ld/st pipelines
+  //   srli(tmp3, tmp6, BitsPerByte * (wordSize - 8)); // UU/LL: pattern[m-1]
+  // }
+  // if (!isLL) { // UU/UL case
+  //   slli(ch2, nlen_tmp, 1); // offsets in bytes
+  // }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
-  add(result, haystack, isLL ? nlen_tmp : ch2);
+  add(result, haystack, ch2);
   ld(ch2, Address(result)); // load 8 bytes from source string
   mv(ch1, tmp6);
-  if (isLL) {
-    j(BMLOOPSTR1_AFTER_LOAD);
-  } else {
+  // if (isLL) {
+  //   j(BMLOOPSTR1_AFTER_LOAD);
+  // } else {
     sub(nlen_tmp, nlen_tmp, 1); // no need to branch for UU/UL case. cnt1 >= 8
     j(BMLOOPSTR1_CMP);
-  }
+  // }
 
   bind(BMLOOPSTR1);
-  shadd(ch1, nlen_tmp, needle, ch1, needle_chr_shift);
-  (this->*needle_load_1chr)(ch1, Address(ch1), noreg);
-  shadd(ch2, nlen_tmp, haystack, ch2, haystack_chr_shift);
-  (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+  shadd(ch1, nlen_tmp, needle, ch1, 1);
+  // (this->*needle_load_1chr)(ch1, Address(ch1), noreg);
+  lhu(ch1, Address(ch1));
+  shadd(ch2, nlen_tmp, haystack, ch2, 1);
+  // (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+  lhu(ch2, Address(ch2));
 
   bind(BMLOOPSTR1_AFTER_LOAD);
   sub(nlen_tmp, nlen_tmp, 1);
@@ -4950,24 +4954,24 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   beq(ch1, ch2, BMLOOPSTR1);
 
   bind(BMSKIP);
-  if (!isLL) {
+  // if (!isLL) {
     // if we've met UTF symbol while searching Latin1 pattern, then we can
     // skip needle_len symbols
-    if (needle_isL != haystack_isL) {
-      mv(result_tmp, needle_len);
-    } else {
+    // if (needle_isL != haystack_isL) {
+    //   mv(result_tmp, needle_len);
+    // } else {
       mv(result_tmp, 1);
-    }
+    // }
     mv(t0, ASIZE);
     bgeu(skipch, t0, BMADV);
-  }
+  // }
   add(result_tmp, sp, skipch);
   lbu(result_tmp, Address(result_tmp)); // load skip offset
 
   bind(BMADV);
   sub(nlen_tmp, needle_len, 1);
   // move haystack after bad char skip offset
-  shadd(haystack, result_tmp, haystack, result, haystack_chr_shift);
+  shadd(haystack, result_tmp, haystack, result, 1);
   ble(haystack, haystack_end, BMLOOPSTR2);
   add(sp, sp, ASIZE);
   j(NOMATCH);
@@ -4977,9 +4981,9 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
 
   bind(BMMATCH);
   sub(result, haystack, orig_haystack);
-  if (!haystack_isL) {
+  // if (!haystack_isL) {
     srli(result, result, 1);
-  }
+  // }
   add(sp, sp, ASIZE);
   j(DONE);
 
@@ -4988,16 +4992,16 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   bltz(t0, LINEARSEARCH);
   mv(result, zr);
   RuntimeAddress stub = NULL;
-  if (isLL) {
-    stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ll());
-    assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
-  } else if (needle_isL) {
-    stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ul());
-    assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
-  } else {
+  // if (isLL) {
+  //   stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ll());
+  //   assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+  // } else if (needle_isL) {
+  //   stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ul());
+  //   assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+  // } else {
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
     assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
-  }
+  // }
   trampoline_call(stub);
   j(DONE);
 
@@ -5006,7 +5010,7 @@ void MacroAssembler::string_indexof(Register haystack, Register needle,
   j(DONE);
 
   bind(LINEARSEARCH);
-  string_indexof_linearscan(haystack, needle, haystack_len, needle_len, tmp1, tmp2, tmp3, tmp4, -1, result, ae);
+  string_indexof_linearscan(haystack, needle, haystack_len, needle_len, tmp1, tmp2, tmp3, tmp4, -1, result, 0);
 
   bind(DONE);
   BLOCK_COMMENT("} string_indexof");
@@ -5035,21 +5039,21 @@ void MacroAssembler::string_indexof_linearscan(Register haystack, Register needl
   Register hlen_neg = haystack_len, nlen_neg = needle_len;
   Register nlen_tmp = tmp1, hlen_tmp = tmp2, result_tmp = tmp4;
 
-  bool isLL = ae == StrIntrinsicNode::LL;
+  // bool isLL = ae == StrIntrinsicNode::LL;
 
-  bool needle_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UL;
-  bool haystack_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::LU;
-  int needle_chr_shift = needle_isL ? 0 : 1;
-  int haystack_chr_shift = haystack_isL ? 0 : 1;
-  int needle_chr_size = needle_isL ? 1 : 2;
-  int haystack_chr_size = haystack_isL ? 1 : 2;
+  // bool needle_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UL;
+  // bool haystack_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::LU;
+  // int needle_chr_shift = needle_isL ? 0 : 1;
+  // int haystack_chr_shift = haystack_isL ? 0 : 1;
+  // int needle_chr_size = needle_isL ? 1 : 2;
+  // int haystack_chr_size = haystack_isL ? 1 : 2;
 
-  load_chr_insn needle_load_1chr = needle_isL ? (load_chr_insn)&MacroAssembler::lbu :
-                                   (load_chr_insn)&MacroAssembler::lhu;
-  load_chr_insn haystack_load_1chr = haystack_isL ? (load_chr_insn)&MacroAssembler::lbu :
-                                     (load_chr_insn)&MacroAssembler::lhu;
-  load_chr_insn load_2chr = isLL ? (load_chr_insn)&MacroAssembler::lhu : (load_chr_insn)&MacroAssembler::lwu;
-  load_chr_insn load_4chr = isLL ? (load_chr_insn)&MacroAssembler::lwu : (load_chr_insn)&MacroAssembler::ld;
+  // load_chr_insn needle_load_1chr = needle_isL ? (load_chr_insn)&MacroAssembler::lbu :
+  //                                  (load_chr_insn)&MacroAssembler::lhu;
+  // load_chr_insn haystack_load_1chr = haystack_isL ? (load_chr_insn)&MacroAssembler::lbu :
+  //                                    (load_chr_insn)&MacroAssembler::lhu;
+  // load_chr_insn load_2chr = isLL ? (load_chr_insn)&MacroAssembler::lhu : (load_chr_insn)&MacroAssembler::lwu;
+  // load_chr_insn load_4chr = isLL ? (load_chr_insn)&MacroAssembler::lwu : (load_chr_insn)&MacroAssembler::ld;
 
   Label DO1, DO2, DO3, MATCH, NOMATCH, DONE;
 
@@ -5058,142 +5062,142 @@ void MacroAssembler::string_indexof_linearscan(Register haystack, Register needl
   if (needle_con_cnt == -1) {
     Label DOSHORT, FIRST_LOOP, STR2_NEXT, STR1_LOOP, STR1_NEXT;
 
-    sub(t0, needle_len, needle_isL == haystack_isL ? 4 : 2);
+    sub(t0, needle_len, 4);
     bltz(t0, DOSHORT);
 
-    (this->*needle_load_1chr)(first, Address(needle), noreg);
-    slli(t0, needle_len, needle_chr_shift);
+    // (this->*needle_load_1chr)(first, Address(needle), noreg);
+    slli(t0, needle_len, 1);
     add(needle, needle, t0);
     neg(nlen_neg, t0);
-    slli(t0, result_tmp, haystack_chr_shift);
+    slli(t0, result_tmp, 1);
     add(haystack, haystack, t0);
     neg(hlen_neg, t0);
 
     bind(FIRST_LOOP);
     add(t0, haystack, hlen_neg);
-    (this->*haystack_load_1chr)(ch2, Address(t0), noreg);
+    // (this->*haystack_load_1chr)(ch2, Address(t0), noreg);
     beq(first, ch2, STR1_LOOP);
 
     bind(STR2_NEXT);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    add(hlen_neg, hlen_neg, 1);
     blez(hlen_neg, FIRST_LOOP);
     j(NOMATCH);
 
     bind(STR1_LOOP);
-    add(nlen_tmp, nlen_neg, needle_chr_size);
-    add(hlen_tmp, hlen_neg, haystack_chr_size);
+    add(nlen_tmp, nlen_neg, 1);
+    add(hlen_tmp, hlen_neg, 1);
     bgez(nlen_tmp, MATCH);
 
     bind(STR1_NEXT);
     add(ch1, needle, nlen_tmp);
-    (this->*needle_load_1chr)(ch1, Address(ch1), noreg);
+    // (this->*needle_load_1chr)(ch1, Address(ch1), noreg);
     add(ch2, haystack, hlen_tmp);
-    (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+    // (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
     bne(ch1, ch2, STR2_NEXT);
-    add(nlen_tmp, nlen_tmp, needle_chr_size);
-    add(hlen_tmp, hlen_tmp, haystack_chr_size);
+    add(nlen_tmp, nlen_tmp, 1);
+    add(hlen_tmp, hlen_tmp, 1);
     bltz(nlen_tmp, STR1_NEXT);
     j(MATCH);
 
     bind(DOSHORT);
-    if (needle_isL == haystack_isL) {
-      sub(t0, needle_len, 2);
-      bltz(t0, DO1);
-      bgtz(t0, DO3);
-    }
+    // if (needle_isL == haystack_isL) {
+    //   sub(t0, needle_len, 2);
+    //   bltz(t0, DO1);
+    //   bgtz(t0, DO3);
+    // }
   }
 
   if (needle_con_cnt == 4) {
     Label CH1_LOOP;
-    (this->*load_4chr)(ch1, Address(needle), noreg);
+    // (this->*load_4chr)(ch1, Address(needle), noreg);
     sub(result_tmp, haystack_len, 4);
-    slli(tmp3, result_tmp, haystack_chr_shift); // result as tmp
+    slli(tmp3, result_tmp, 1); // result as tmp
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
 
     bind(CH1_LOOP);
     add(ch2, haystack, hlen_neg);
-    (this->*load_4chr)(ch2, Address(ch2), noreg);
+    // (this->*load_4chr)(ch2, Address(ch2), noreg);
     beq(ch1, ch2, MATCH);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    add(hlen_neg, hlen_neg, 1);
     blez(hlen_neg, CH1_LOOP);
     j(NOMATCH);
   }
 
-  if ((needle_con_cnt == -1 && needle_isL == haystack_isL) || needle_con_cnt == 2) {
-    Label CH1_LOOP;
-    BLOCK_COMMENT("string_indexof DO2 {");
-    bind(DO2);
-    (this->*load_2chr)(ch1, Address(needle), noreg);
-    if (needle_con_cnt == 2) {
-      sub(result_tmp, haystack_len, 2);
-    }
-    slli(tmp3, result_tmp, haystack_chr_shift);
-    add(haystack, haystack, tmp3);
-    neg(hlen_neg, tmp3);
+  // if ((needle_con_cnt == -1 && needle_isL == haystack_isL) || needle_con_cnt == 2) {
+  //   Label CH1_LOOP;
+  //   BLOCK_COMMENT("string_indexof DO2 {");
+  //   bind(DO2);
+  //   (this->*load_2chr)(ch1, Address(needle), noreg);
+  //   if (needle_con_cnt == 2) {
+  //     sub(result_tmp, haystack_len, 2);
+  //   }
+  //   slli(tmp3, result_tmp, haystack_chr_shift);
+  //   add(haystack, haystack, tmp3);
+  //   neg(hlen_neg, tmp3);
 
-    bind(CH1_LOOP);
-    add(tmp3, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(tmp3), noreg);
-    beq(ch1, ch2, MATCH);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
-    blez(hlen_neg, CH1_LOOP);
-    j(NOMATCH);
-    BLOCK_COMMENT("} string_indexof DO2");
-  }
+  //   bind(CH1_LOOP);
+  //   add(tmp3, haystack, hlen_neg);
+  //   (this->*load_2chr)(ch2, Address(tmp3), noreg);
+  //   beq(ch1, ch2, MATCH);
+  //   add(hlen_neg, hlen_neg, haystack_chr_size);
+  //   blez(hlen_neg, CH1_LOOP);
+  //   j(NOMATCH);
+  //   BLOCK_COMMENT("} string_indexof DO2");
+  // }
 
-  if ((needle_con_cnt == -1 && needle_isL == haystack_isL) || needle_con_cnt == 3) {
-    Label FIRST_LOOP, STR2_NEXT, STR1_LOOP;
-    BLOCK_COMMENT("string_indexof DO3 {");
+  // if ((needle_con_cnt == -1 && needle_isL == haystack_isL) || needle_con_cnt == 3) {
+  //   Label FIRST_LOOP, STR2_NEXT, STR1_LOOP;
+  //   BLOCK_COMMENT("string_indexof DO3 {");
 
-    bind(DO3);
-    (this->*load_2chr)(first, Address(needle), noreg);
-    (this->*needle_load_1chr)(ch1, Address(needle, 2 * needle_chr_size), noreg);
-    if (needle_con_cnt == 3) {
-      sub(result_tmp, haystack_len, 3);
-    }
-    slli(hlen_tmp, result_tmp, haystack_chr_shift);
-    add(haystack, haystack, hlen_tmp);
-    neg(hlen_neg, hlen_tmp);
+  //   bind(DO3);
+  //   (this->*load_2chr)(first, Address(needle), noreg);
+  //   (this->*needle_load_1chr)(ch1, Address(needle, 2 * needle_chr_size), noreg);
+  //   if (needle_con_cnt == 3) {
+  //     sub(result_tmp, haystack_len, 3);
+  //   }
+  //   slli(hlen_tmp, result_tmp, haystack_chr_shift);
+  //   add(haystack, haystack, hlen_tmp);
+  //   neg(hlen_neg, hlen_tmp);
 
-    bind(FIRST_LOOP);
-    add(ch2, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(ch2), noreg);
-    beq(first, ch2, STR1_LOOP);
+  //   bind(FIRST_LOOP);
+  //   add(ch2, haystack, hlen_neg);
+  //   (this->*load_2chr)(ch2, Address(ch2), noreg);
+  //   beq(first, ch2, STR1_LOOP);
 
-    bind(STR2_NEXT);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
-    blez(hlen_neg, FIRST_LOOP);
-    j(NOMATCH);
+  //   bind(STR2_NEXT);
+  //   add(hlen_neg, hlen_neg, haystack_chr_size);
+  //   blez(hlen_neg, FIRST_LOOP);
+  //   j(NOMATCH);
 
-    bind(STR1_LOOP);
-    add(hlen_tmp, hlen_neg, 2 * haystack_chr_size);
-    add(ch2, haystack, hlen_tmp);
-    (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
-    bne(ch1, ch2, STR2_NEXT);
-    j(MATCH);
-    BLOCK_COMMENT("} string_indexof DO3");
-  }
+  //   bind(STR1_LOOP);
+  //   add(hlen_tmp, hlen_neg, 2 * haystack_chr_size);
+  //   add(ch2, haystack, hlen_tmp);
+  //   (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+  //   bne(ch1, ch2, STR2_NEXT);
+  //   j(MATCH);
+  //   BLOCK_COMMENT("} string_indexof DO3");
+  // }
 
   if (needle_con_cnt == -1 || needle_con_cnt == 1) {
     Label DO1_LOOP;
 
     BLOCK_COMMENT("string_indexof DO1 {");
     bind(DO1);
-    (this->*needle_load_1chr)(ch1, Address(needle), noreg);
+    // (this->*needle_load_1chr)(ch1, Address(needle), noreg);
     sub(result_tmp, haystack_len, 1);
     mv(tmp3, result_tmp);
-    if (haystack_chr_shift) {
-      slli(tmp3, result_tmp, haystack_chr_shift);
-    }
+    // if (haystack_chr_shift) {
+    //   slli(tmp3, result_tmp, haystack_chr_shift);
+    // }
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
 
     bind(DO1_LOOP);
     add(tmp3, haystack, hlen_neg);
-    (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
+    // (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
     beq(ch1, ch2, MATCH);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    add(hlen_neg, hlen_neg, 1);
     blez(hlen_neg, DO1_LOOP);
     BLOCK_COMMENT("} string_indexof DO1");
   }
@@ -5203,7 +5207,7 @@ void MacroAssembler::string_indexof_linearscan(Register haystack, Register needl
   j(DONE);
 
   bind(MATCH);
-  srai(t0, hlen_neg, haystack_chr_shift);
+  srai(t0, hlen_neg, 1);
   add(result, result_tmp, t0);
 
   bind(DONE);
