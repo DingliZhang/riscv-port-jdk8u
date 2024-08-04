@@ -5218,7 +5218,7 @@ void MacroAssembler::string_indexof_linearscan(Register haystack, Register needl
 void MacroAssembler::string_compare(Register str1, Register str2,
                                        Register cnt1, Register cnt2, Register result, Register tmp1)
 {
-  Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
+  Label LENGTH_DIFF, DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
           DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
           SHORT_LOOP_START, TAIL_CHECK, L;
 
@@ -5252,10 +5252,10 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   ld(cnt1, Address(t0));
   addi(cnt2, cnt2, wordSize);
 
-  xorr(t0, tmp1, tmp2);
+  xorr(t0, tmp1, cnt1);
   beqz(t0, NEXT_WORD);
   j(DIFFERENCE);
-  xorr(t0, tmp1, tmp2);
+  xorr(t0, tmp1, cnt1);
   bnez(t0, DIFFERENCE);
 
   ld(result, Address(str1));
