@@ -280,7 +280,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   ld(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
   // resolve_oop_handle(result, tmp);
   // JNIHandles::resolve(obj);
-  lr(result, Address(result, 0));
+  ld(result, Address(result, 0));
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
