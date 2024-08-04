@@ -4685,6 +4685,7 @@ typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, 
 // x12: haystack_len
 // x13: needle
 // x14: needle_len
+//TODO-RISCV64 needed to re-implementation
 void MacroAssembler::string_indexof(Register haystack, Register needle,
                                        Register haystack_len, Register needle_len,
                                        Register tmp1, Register tmp2,
