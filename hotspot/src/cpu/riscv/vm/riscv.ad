@@ -2174,6 +2174,62 @@ encode %{
     __ ret();
   %}
 
+  //imitate from aarch64
+  enc_class riscv_enc_prefetchr(memory mem) %{
+    //MacroAssembler _masm(&cbuf);
+    //Register base = as_Register($mem$$base);
+    //int index = $mem$$index;
+    //int scale = $mem$$scale;
+    //int disp = $mem$$disp;
+    //if (index == -1) {
+    //  __ prefetch_w(Address(base, disp), PLDL1KEEP);
+    //} else {
+    //  Register index_reg = as_Register(index);
+    //  if (disp == 0) {
+    //    __ prefetch_w(Address(base, index_reg, Address::lsl(scale)), PLDL1KEEP);
+    //  } else {
+    //    __ la(rscratch1, Address(base, disp));
+    //    __ prefetch_w(Address(rscratch1, index_reg, Address::lsl(scale)), PLDL1KEEP);
+    //  }
+    //}
+  %}
+
+  enc_class riscv_enc_prefetchnta(memory mem) %{
+    //MacroAssembler _masm(&cbuf);
+    //Register base = as_Register($mem$$base);
+    //int index = $mem$$index;
+    //int scale = $mem$$scale;
+    //int disp = $mem$$disp;
+    //if (index == -1) {
+    //  __ prefetch_w(Address(base, disp), PSTL1STRM);
+    //} else {
+    //  Register index_reg = as_Register(index);
+    //  if (disp == 0) {
+    //    __ prefetch_w(Address(base, index_reg, Address::lsl(scale)), PSTL1STRM);
+    //    __ nop();
+    //  } else {
+    //    __ la(rscratch1, Address(base, disp));
+	  //    __ prefetch_w(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1STRM);
+    //  }
+    //}
+  %}
+
+instruct prefetchr( memory mem ) %{
+  //match(PrefetchRead mem);
+  //ins_cost(INSN_COST);
+  //format %{ "prefetch_w $mem, PLDL1KEEP\t# Prefetch into level 1 cache read keep" %}
+  //ins_encode( riscv_enc_prefetchr(mem) );
+  //ins_pipe(iload_prefetch);
+%}
+
+instruct prefetchnta( memory mem ) %{
+  //match(PrefetchWrite mem);
+  //ins_cost(INSN_COST);
+  //format %{ "prefetch_w $mem, PSTL1STRM\t# Prefetch into level 1 cache write streaming" %}
+  //ins_encode( aarch64_enc_prefetchnta(mem) );
+  //ins_pipe(iload_prefetch);
+%}
+
 %}
 
 //----------FRAME--------------------------------------------------------------

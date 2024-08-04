@@ -196,6 +196,7 @@ class NativeInstruction {
   static bool is_lwu_to_zr(address instr);
 
   inline bool is_nop();
+  bool is_dtrace_trap();
   inline bool is_jump_or_nop();
   bool is_safepoint_poll();
   bool is_sigill_zombie_not_entrant();

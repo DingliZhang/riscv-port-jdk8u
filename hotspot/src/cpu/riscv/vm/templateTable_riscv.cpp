@@ -1928,6 +1928,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     if (TieredCompilation) {
       Label no_mdo;
       int increment = InvocationCounter::count_increment;
+      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
       if (ProfileInterpreter) {
         // Are we profiling?
         __ ld(x11, Address(xmethod, in_bytes(Method::method_data_offset())));
@@ -1935,18 +1936,24 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         // Increment the MDO backedge counter
         const Address mdo_backedge_counter(x11, in_bytes(MethodData::backedge_counter_offset()) +
                                            in_bytes(InvocationCounter::counter_offset()));
-        const Address mask(x11, in_bytes(MethodData::backedge_mask_offset()));
+        // const Address mask(x11, in_bytes(MethodData::backedge_mask_offset()));
+        // __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
+        //                            x10, t0, false,
+        //                            UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
         __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
-                                   x10, t0, false,
+                                   x10, false,
                                    UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
         __ j(dispatch);
       }
       __ bind(no_mdo);
       // Increment backedge counter in MethodCounters*
       __ ld(t0, Address(xmethod, Method::method_counters_offset()));
-      const Address mask(t0, in_bytes(MethodCounters::backedge_mask_offset()));
+      // const Address mask(t0, in_bytes(MethodCounters::backedge_mask_offset()));
+      // __ increment_mask_and_jump(Address(t0, be_offset), increment, mask,
+      //                            x10, t1, false,
+      //                            UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
       __ increment_mask_and_jump(Address(t0, be_offset), increment, mask,
-                                 x10, t1, false,
+                                 x10, false,
                                  UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
     } else { // not TieredCompilation
       // increment counter
@@ -1961,7 +1968,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
       if (ProfileInterpreter) {
         // Test to see if we should create a method data oop
-        __ lwu(t0, Address(t1, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
+        // __ lwu(t0, Address(t1, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
+        __ la(t0, ExternalAddress((address) &InvocationCounter::InterpreterProfileLimit));
+        __ lwu(t0, t0);
         __ blt(x10, t0, dispatch);
 
         // if no method data exists, go to profile method
@@ -1969,7 +1978,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
         if (UseOnStackReplacement) {
           // check for overflow against x11 which is the MDO taken count
-          __ lwu(t0, Address(t1, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
+          // __ lwu(t0, Address(t1, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
+          __ la(t0, ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
+          __ lwu(t0, t0);
           __ bltu(x11, t0, dispatch); // Intel == Assembler::below, lo:unsigned lower
 
           // When ProfileInterpreter is on, the backedge_count comes
@@ -1987,7 +1998,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         if (UseOnStackReplacement) {
           // check for overflow against x10, which is the sum of the
           // counters
-          __ lwu(t0, Address(t1, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
+          // __ lwu(t0, Address(t1, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset())));
+          __ la(t0, ExternalAddress((address) &InvocationCounter::InterpreterBackwardBranchLimit));
+          __ lwu(t0, t0);
           __ bgeu(x10, t0, backedge_counter_overflow); // Intel == Assembler::aboveEqual
         }
       }

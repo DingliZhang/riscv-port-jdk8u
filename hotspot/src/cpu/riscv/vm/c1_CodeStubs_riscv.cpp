@@ -42,6 +42,15 @@
 
 #define __ ce->masm()->
 
+jbyte* G1PostBarrierStub::_byte_map_base = NULL;
+
+jbyte* G1PostBarrierStub::byte_map_base_slow() {
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  assert(bs->is_a(BarrierSet::G1SATBCTLogging),
+         "Must be if we're using this.");
+  return ((G1SATBCardTableModRefBS*)bs)->byte_map_base;
+}
+
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   Metadata *m = _method->as_constant_ptr()->as_metadata();

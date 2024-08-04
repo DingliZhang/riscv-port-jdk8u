@@ -911,6 +911,9 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   }
 }
 
+void LIR_Assembler::prefetchr(LIR_Opr src) { Unimplemented(); }
+void LIR_Assembler::prefetchw(LIR_Opr src) { Unimplemented(); }
+
 void LIR_Assembler::emit_op3(LIR_Op3* op) {
   switch (op->code()) {
     case lir_idiv: // fall through

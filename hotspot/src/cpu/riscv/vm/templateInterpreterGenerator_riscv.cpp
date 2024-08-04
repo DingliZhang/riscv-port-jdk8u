@@ -294,6 +294,7 @@ void InterpreterGenerator::generate_counter_incr(
   // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
   if (TieredCompilation) {
     int increment = InvocationCounter::count_increment;
+    int mask = ((1 << Tier0InvokeNotifyFreqLog)  - 1) << InvocationCounter::count_shift;
     Label no_mdo;
     if (ProfileInterpreter) {
       // Are we profiling?
@@ -302,8 +303,9 @@ void InterpreterGenerator::generate_counter_incr(
       // Increment counter in the MDO
       const Address mdo_invocation_counter(x10, in_bytes(MethodData::invocation_counter_offset()) +
                                                 in_bytes(InvocationCounter::counter_offset()));
-      const Address mask(x10, in_bytes(MethodData::invoke_mask_offset()));
-      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, t0, t1, false, overflow);
+      // const Address mask(x10, in_bytes(MethodData::invoke_mask_offset()));
+      // __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, t0, t1, false, overflow);
+      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, t0, false, overflow);
       __ j(done);
     }
     __ bind(no_mdo);
@@ -312,8 +314,9 @@ void InterpreterGenerator::generate_counter_incr(
                   MethodCounters::invocation_counter_offset() +
                   InvocationCounter::counter_offset());
     __ get_method_counters(xmethod, t1, done);
-    const Address mask(t1, in_bytes(MethodCounters::invoke_mask_offset()));
-    __ increment_mask_and_jump(invocation_counter, increment, mask, t0, x11, false, overflow);
+    // const Address mask(t1, in_bytes(MethodCounters::invoke_mask_offset()));
+    // __ increment_mask_and_jump(invocation_counter, increment, mask, t0, x11, false, overflow);
+    __ increment_mask_and_jump(invocation_counter, increment, mask, t0, false, overflow);
     __ bind(done);
   } else { // not TieredCompilation
     const Address backedge_counter(t1,
@@ -345,8 +348,10 @@ void InterpreterGenerator::generate_counter_incr(
 
     if (ProfileInterpreter && profile_method != NULL) {
       // Test to see if we should create a method data oop
-      __ ld(t1, Address(xmethod, Method::method_counters_offset()));
-      __ lwu(t1, Address(t1, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
+      // __ ld(t1, Address(xmethod, Method::method_counters_offset()));
+      // __ lwu(t1, Address(t1, in_bytes(MethodCounters::interpreter_profile_limit_offset())));
+      __ ld(t1, ExternalAddress((address)&InvocationCounter::InterpreterProfileLimit));  //TODO-RISCV64 maybe should use la?
+      __ lwu(t1, Address(t1));  //TODO-RISCV64 ??
       __ blt(x10, t1, *profile_method_continue);
 
       // if no method data exists, go to profile_method
@@ -354,8 +359,10 @@ void InterpreterGenerator::generate_counter_incr(
     }
 
     {
-      __ ld(t1, Address(xmethod, Method::method_counters_offset()));
-      __ lwu(t1, Address(t1, in_bytes(MethodCounters::interpreter_invocation_limit_offset())));
+      // __ ld(t1, Address(xmethod, Method::method_counters_offset()));
+      // __ lwu(t1, Address(t1, in_bytes(MethodCounters::interpreter_invocation_limit_offset())));
+      __ ld(t1, ExternalAddress((address)&InvocationCounter::InterpreterInvocationLimit));  //TODO-RISCV64 ??
+      __ lwu(t1, Address(t1));  //TODO-RISCV64 ??
       __ bltu(x10, t1, done);
       __ j(*overflow);
     }

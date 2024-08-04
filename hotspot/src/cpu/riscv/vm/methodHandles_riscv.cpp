@@ -26,7 +26,6 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
