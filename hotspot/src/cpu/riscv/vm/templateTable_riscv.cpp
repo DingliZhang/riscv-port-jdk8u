@@ -1928,7 +1928,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     if (TieredCompilation) {
       Label no_mdo;
       int increment = InvocationCounter::count_increment;
-      // int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
+      int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
       if (ProfileInterpreter) {
         // Are we profiling?
         __ ld(x11, Address(xmethod, in_bytes(Method::method_data_offset())));
@@ -1936,18 +1936,24 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         // Increment the MDO backedge counter
         const Address mdo_backedge_counter(x11, in_bytes(MethodData::backedge_counter_offset()) +
                                            in_bytes(InvocationCounter::counter_offset()));
-        const Address mask(x11, in_bytes(MethodData::backedge_mask_offset()));
+        // const Address mask(x11, in_bytes(MethodData::backedge_mask_offset()));
+        // __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
+        //                            x10, t0, false,
+        //                            UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
         __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
-                                   x10, t0, false,
+                                   x10, false,
                                    UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
         __ j(dispatch);
       }
       __ bind(no_mdo);
       // Increment backedge counter in MethodCounters*
       __ ld(t0, Address(xmethod, Method::method_counters_offset()));
-      const Address mask(t0, in_bytes(MethodCounters::backedge_mask_offset()));
+      // const Address mask(t0, in_bytes(MethodCounters::backedge_mask_offset()));
+      // __ increment_mask_and_jump(Address(t0, be_offset), increment, mask,
+      //                            x10, t1, false,
+      //                            UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
       __ increment_mask_and_jump(Address(t0, be_offset), increment, mask,
-                                 x10, t1, false,
+                                 x10, false,
                                  UseOnStackReplacement ? &backedge_counter_overflow : &dispatch);
     } else { // not TieredCompilation
       // increment counter
