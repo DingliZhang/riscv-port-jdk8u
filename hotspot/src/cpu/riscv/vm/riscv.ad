@@ -2176,42 +2176,42 @@ encode %{
 
   //imitate from aarch64
   enc_class riscv_enc_prefetchr(memory mem) %{
-    MacroAssembler _masm(&cbuf);
-    Register base = as_Register($mem$$base);
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int disp = $mem$$disp;
-    if (index == -1) {
-      __ prefetch_w(Address(base, disp), PLDL1KEEP);
-    } else {
-      Register index_reg = as_Register(index);
-      if (disp == 0) {
-        __ prefetch_w(Address(base, index_reg, Address::lsl(scale)), PLDL1KEEP);
-      } else {
-        __ la(rscratch1, Address(base, disp));
-        __ prefetch_w(Address(rscratch1, index_reg, Address::lsl(scale)), PLDL1KEEP);
-      }
-    }
+    //MacroAssembler _masm(&cbuf);
+    //Register base = as_Register($mem$$base);
+    //int index = $mem$$index;
+    //int scale = $mem$$scale;
+    //int disp = $mem$$disp;
+    //if (index == -1) {
+    //  __ prefetch_w(Address(base, disp), PLDL1KEEP);
+    //} else {
+    //  Register index_reg = as_Register(index);
+    //  if (disp == 0) {
+    //    __ prefetch_w(Address(base, index_reg, Address::lsl(scale)), PLDL1KEEP);
+    //  } else {
+    //    __ la(rscratch1, Address(base, disp));
+    //    __ prefetch_w(Address(rscratch1, index_reg, Address::lsl(scale)), PLDL1KEEP);
+    //  }
+    //}
   %}
 
   enc_class riscv_enc_prefetchnta(memory mem) %{
-    MacroAssembler _masm(&cbuf);
-    Register base = as_Register($mem$$base);
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int disp = $mem$$disp;
-    if (index == -1) {
-      __ prefetch_w(Address(base, disp), PSTL1STRM);
-    } else {
-      Register index_reg = as_Register(index);
-      if (disp == 0) {
-        __ prefetch_w(Address(base, index_reg, Address::lsl(scale)), PSTL1STRM);
-        __ nop();
-      } else {
-        __ la(rscratch1, Address(base, disp));
-	      __ prefetch_w(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1STRM);
-      }
-    }
+    //MacroAssembler _masm(&cbuf);
+    //Register base = as_Register($mem$$base);
+    //int index = $mem$$index;
+    //int scale = $mem$$scale;
+    //int disp = $mem$$disp;
+    //if (index == -1) {
+    //  __ prefetch_w(Address(base, disp), PSTL1STRM);
+    //} else {
+    //  Register index_reg = as_Register(index);
+    //  if (disp == 0) {
+    //    __ prefetch_w(Address(base, index_reg, Address::lsl(scale)), PSTL1STRM);
+    //    __ nop();
+    //  } else {
+    //    __ la(rscratch1, Address(base, disp));
+	  //    __ prefetch_w(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1STRM);
+    //  }
+    //}
   %}
 
 %}
