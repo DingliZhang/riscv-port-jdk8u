@@ -9087,7 +9087,8 @@ instruct ShouldNotReachHere() %{
 
 instruct prefetchr( memory mem ) %{
   match(PrefetchRead mem);
-  ins_cost(INSN_COST);
+  //ins_cost(INSN_COST);
+  ins_cost(BRANCH_COST);
   format %{ "prefetch_w $mem, PLDL1KEEP\t# Prefetch into level 1 cache read keep" %}
   ins_encode( riscv_enc_prefetchr(mem) );
   //ins_pipe(iload_prefetch);
@@ -9096,7 +9097,8 @@ instruct prefetchr( memory mem ) %{
 
 instruct prefetchnta( memory mem ) %{
   match(PrefetchWrite mem);
-  ins_cost(INSN_COST);
+  //ins_cost(INSN_COST);
+  ins_cost(BRANCH_COST);
   format %{ "prefetch_w $mem, PSTL1STRM\t# Prefetch into level 1 cache write streaming" %}
   ins_encode( riscv_enc_prefetchnta(mem) );
   //ins_pipe(iload_prefetch);
