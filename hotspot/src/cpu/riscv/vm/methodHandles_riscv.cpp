@@ -31,7 +31,6 @@
 #include "memory/allocation.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ _masm->
