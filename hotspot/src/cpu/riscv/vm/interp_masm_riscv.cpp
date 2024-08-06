@@ -1550,13 +1550,9 @@ void InterpreterMacroAssembler::notify_method_exit(
 
 
 // Jump if ((*counter_addr += increment) & mask) satisfies the condition.
-// void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
-//                                                         int increment, Address mask,
-//                                                         Register tmp1, Register tmp2,
-//                                                         bool preloaded, Label* where) {
 void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
                                                         int increment, Address mask,
-                                                        Register tmp1,
+                                                        Register tmp1, Register tmp2,
                                                         bool preloaded, Label* where) {
   Label done;
   if (!preloaded) {
@@ -1564,9 +1560,8 @@ void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
   }
   add(tmp1, tmp1, increment);
   sw(tmp1, counter_addr);
-  // lwu(tmp2, mask);
-  // andr(tmp1, tmp1, tmp2);
-  andr(tmp1, tmp1, mask);
+  lwu(tmp2, mask);
+  andr(tmp1, tmp1, tmp2);
   bnez(tmp1, done);
   j(*where); // offset is too large so we have to use j instead of beqz here
   bind(done);
