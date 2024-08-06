@@ -363,7 +363,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
         // pick out the vtable index from the MemberName, and then we can discard it:
         Register temp2_index = temp2;
-        __ access_load_at(T_ADDRESS, IN_HEAP, temp2_index, member_vmindex, noreg, noreg);
+        // __ access_load_at(T_ADDRESS, IN_HEAP, temp2_index, member_vmindex, noreg, noreg);
+        __ ld(temp2_index, member_vmindex);
 
         if (VerifyMethodHandles) {
           Label L_index_ok;
@@ -394,7 +395,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ verify_klass_ptr(temp3_intf);
 
         Register rindex = xmethod;
-        __ access_load_at(T_ADDRESS, IN_HEAP, rindex, member_vmindex, noreg, noreg);
+        // __ access_load_at(T_ADDRESS, IN_HEAP, rindex, member_vmindex, noreg, noreg);
+        __ ld(rindex, member_vmindex);
         if (VerifyMethodHandles) {
           Label L;
           __ bgez(rindex, L);

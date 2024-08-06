@@ -274,6 +274,9 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
 void InterpreterMacroAssembler::load_resolved_reference_at_index(
                                 Register result, Register index, Register tmp) {
   assert_different_registers(result, index);
+  // convert from field index to resolved_references() index and from
+  // word index to byte offset. Since this is a java object, it can be compressed
+  slliw(index, index, LogBytesPerHeapOop);
 
   get_constant_pool(result);
   // Load pointer for resolved_references[] objArray
