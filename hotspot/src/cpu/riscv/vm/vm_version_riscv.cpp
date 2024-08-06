@@ -37,6 +37,8 @@
 
 const char* VM_Version::_uarch = "";
 uint32_t VM_Version::_initial_vector_length = 0;
+int VM_Version::_cpuFeatures;
+const char*           VM_Version::_features_str = "";
 
 void VM_Version::initialize() {
   get_os_cpu_info();
@@ -92,7 +94,7 @@ void VM_Version::initialize() {
   }
 
   if (UseRVV) {
-    if (!(_features & CPU_V)) {
+    if (!(_cpuFeatures & CPU_V)) {
       warning("RVV is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
@@ -101,12 +103,12 @@ void VM_Version::initialize() {
     }
   }
 
-  if (UseRVB && !(_features & CPU_B)) {
+  if (UseRVB && !(_cpuFeatures & CPU_B)) {
     warning("RVB is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVB, false);
   }
 
-  if (UseRVC && !(_features & CPU_C)) {
+  if (UseRVC && !(_cpuFeatures & CPU_C)) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
   }
@@ -127,11 +129,11 @@ void VM_Version::initialize() {
   buf[0] = '\0';
   if (_uarch != NULL && strcmp(_uarch, "") != 0) snprintf(buf, sizeof(buf), "%s,", _uarch);
   strcat(buf, "rv64");
-#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_features & CPU_##id) strcat(buf, name);
+#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_cpuFeatures & CPU_##id) strcat(buf, name);
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED
 
-  _features_string = os::strdup(buf);
+  _features_str = os::strdup(buf);
 
 #ifdef COMPILER2
   c2_initialize();

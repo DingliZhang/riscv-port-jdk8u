@@ -45,6 +45,11 @@ protected:
 public:
   // Initialization
   static void initialize();
+  static int _cpuFeatures;     // features returned by the "cpuid" instruction
+                               // 0 if this instruction is not available
+  static const char* _features_str;
+  static const char* cpu_features()           { return _features_str; }
+  static int cpu_cpuFeatures()                { return _cpuFeatures; }
 
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl)               \
