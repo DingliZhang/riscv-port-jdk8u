@@ -1098,7 +1098,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
   if (do_polling() && C->is_method_compilation()) {
     st->print("# touch polling page\n\t");
-    st->print("li  t0, #0x%lx\n\t", p2i(os::get_polling_page()));
+    st->print("li  t0, #0x%lx\n\t", p2i(os::get_polling_page()));  //TODO-RISCV64, should `li` change to `mv`?
     st->print("ld  zr, [t0]");
   }
 }
