@@ -113,7 +113,7 @@ ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
   return os::fetch_frame_from_context(uc, ret_sp, ret_fp);
 }
 
-ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC epc;
@@ -141,7 +141,7 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(const void* ucVoid) {
+frame os::fetch_frame_from_context(void* ucVoid) {
   intptr_t* frame_sp = NULL;
   intptr_t* frame_fp = NULL;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &frame_sp, &frame_fp);
@@ -437,7 +437,7 @@ static const char* reg_abi_names[] = {
   "x28(t3)", "x29(t4)","x30(t5)", "x31(t6)"
 };
 
-void os::print_context(outputStream *st, const void *context) {
+void os::print_context(outputStream *st, void *context) {
   if (context == NULL) {
     return;
   }
@@ -463,7 +463,7 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
+void os::print_register_info(outputStream *st, void *context) {
   if (context == NULL) {
     return;
   }
@@ -502,7 +502,7 @@ extern "C" {
     return 0;
   }
 
-  void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
+  void _Copy_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
     if (from > to) {
       const jshort *end = from + count;
       while (from < end) {
@@ -517,7 +517,7 @@ extern "C" {
       }
     }
   }
-  void _Copy_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
+  void _Copy_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
     if (from > to) {
       const jint *end = from + count;
       while (from < end) {
@@ -532,7 +532,7 @@ extern "C" {
       }
     }
   }
-  void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
+  void _Copy_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end) {
@@ -548,22 +548,22 @@ extern "C" {
     }
   }
 
-  void _Copy_arrayof_conjoint_bytes(const HeapWord* from,
+  void _Copy_arrayof_conjoint_bytes(HeapWord* from,
                                     HeapWord* to,
                                     size_t    count) {
     memmove(to, from, count);
   }
-  void _Copy_arrayof_conjoint_jshorts(const HeapWord* from,
+  void _Copy_arrayof_conjoint_jshorts(HeapWord* from,
                                       HeapWord* to,
                                       size_t    count) {
     memmove(to, from, count * 2);
   }
-  void _Copy_arrayof_conjoint_jints(const HeapWord* from,
+  void _Copy_arrayof_conjoint_jints(HeapWord* from,
                                     HeapWord* to,
                                     size_t    count) {
     memmove(to, from, count * 4);
   }
-  void _Copy_arrayof_conjoint_jlongs(const HeapWord* from,
+  void _Copy_arrayof_conjoint_jlongs(HeapWord* from,
                                      HeapWord* to,
                                      size_t    count) {
     memmove(to, from, count * 8);
