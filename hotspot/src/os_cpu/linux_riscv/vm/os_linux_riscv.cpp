@@ -86,7 +86,7 @@ char* os::non_memory_address_word() {
   return (char*) -1;
 }
 
-address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
+address os::Linux::ucontext_get_pc(ucontext_t * uc) {
   return (address)uc->uc_mcontext.__gregs[REG_PC];
 }
 
@@ -94,11 +94,11 @@ void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
   uc->uc_mcontext.__gregs[REG_PC] = (intptr_t)pc;
 }
 
-intptr_t* os::Linux::ucontext_get_sp(const ucontext_t * uc) {
+intptr_t* os::Linux::ucontext_get_sp(ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.__gregs[REG_SP];
 }
 
-intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
+intptr_t* os::Linux::ucontext_get_fp(ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.__gregs[REG_FP];
 }
 
@@ -108,7 +108,7 @@ intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
 // frames. Currently we don't do that on Linux, so it's the same as
 // os::fetch_frame_from_context().
 ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
-  const ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
+  ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
 
   assert(thread != NULL, "just checking");
   assert(ret_sp != NULL, "just checking");
@@ -121,7 +121,7 @@ ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC epc;
-  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  ucontext_t* uc = (ucontext_t*)ucVoid;
 
   if (uc != NULL) {
     epc = ExtendedPC(os::Linux::ucontext_get_pc(uc));
@@ -440,7 +440,7 @@ void os::print_context(outputStream *st, const void *context) {
     return;
   }
 
-  const ucontext_t *uc = (const ucontext_t*)context;
+  ucontext_t *uc = (ucontext_t*)context;
   st->print_cr("Registers:");
   for (int r = 0; r < 32; r++) {
     st->print("%-*.*s=", 8, 8, reg_abi_names[r]);
@@ -466,7 +466,7 @@ void os::print_register_info(outputStream *st, const void *context) {
     return;
   }
 
-  const ucontext_t *uc = (const ucontext_t*)context;
+  ucontext_t *uc = (ucontext_t*)context;
 
   st->print_cr("Register to memory mapping:");
   st->cr();
