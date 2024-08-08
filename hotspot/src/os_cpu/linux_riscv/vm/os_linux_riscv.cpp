@@ -232,7 +232,7 @@ JVM_handle_linux_signal(int sig,
     address const pc = (address) os::Linux::ucontext_get_pc(uc);
     if (pc && StubRoutines::is_safefetch_fault(pc)) {
       // os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      uc->uc_mcontext.pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      uc->uc_mcontext.__gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
       return 1;
     }
   }
@@ -367,7 +367,7 @@ JVM_handle_linux_signal(int sig,
 #ifdef BUILTIN_SIM
     uc->uc_mcontext.gregs[REG_PC] = (greg_t)stub;
 #else
-    uc->uc_mcontext.pc = (__u64)stub;
+    uc->uc_mcontext.__gregs[REG_PC] = (__u64)stub;
 #endif
     return true;
   }
