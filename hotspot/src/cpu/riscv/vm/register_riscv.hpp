@@ -27,6 +27,7 @@
 #define CPU_RISCV_REGISTER_RISCV_HPP
 
 #include "asm/register.hpp"
+#include "vm_version_riscv.hpp"
 
 #define CSR_FFLAGS   0x001        // Floating-Point Accrued Exceptions.
 #define CSR_FRM      0x002        // Floating-Point Dynamic Rounding Mode.

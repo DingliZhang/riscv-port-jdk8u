@@ -31,7 +31,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
-#include "interpreter/interp_masm.hpp"
+// #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"

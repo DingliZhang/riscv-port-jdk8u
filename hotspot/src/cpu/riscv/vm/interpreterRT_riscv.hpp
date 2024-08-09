@@ -27,7 +27,7 @@
 #ifndef CPU_RISCV_INTERPRETERRT_RISCV_HPP
 #define CPU_RISCV_INTERPRETERRT_RISCV_HPP
 
-#include "asm/macroAssembler.hpp"
+// #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 
 // native method calls
