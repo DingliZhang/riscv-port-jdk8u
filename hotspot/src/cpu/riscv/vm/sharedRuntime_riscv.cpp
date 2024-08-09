@@ -1617,33 +1617,33 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (is_reference_type(ret_type)) {
   // TODO-RISCV64 needed to be check
   Label done, not_weak;
-  beqz(value, done);           // Use NULL as-is.
+  __ beqz(x10, done);           // Use NULL as-is.
 
   // Test for jweak tag.
-  andi(t0, value, JNIHandles::weak_tag_mask);
-  beqz(t0, not_weak);
+  __ andi(t0, x10, JNIHandles::weak_tag_mask);
+  __ beqz(t0, not_weak);
 
   // Resolve jweak.
   // access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
   //                Address(value, -JNIHandles::weak_tag_value), tmp, thread);
-  ld(value, Address(value, -JNIHandles::weak_tag_value));  //TODO-RISCV64, imitate from aarch64, needed to be check
-  verify_oop(value);
+  __ ld(x10, Address(x10, -JNIHandles::weak_tag_value));  //TODO-RISCV64, imitate from aarch64, needed to be check
+  __ verify_oop(x10);
 #if INCLUDE_ALL_GCS
    if (UseG1GC) {
     //TODO-RISCV64, imitate from aarch64, needed to be check
      __ g1_write_barrier_pre(noreg /* obj */,
-                             value /* pre_val */,
+                             x10 /* pre_val */,
                              xthread /* thread */,
                              t1 /* tmp */,
                              true /* tosca_live */,
                              true /* expand_call */);
    }
 #endif // INCLUDE_ALL_GCS
-   __ b(done);
+   __ j(done);
    __ bind(not_weak);
    // Resolve (untagged) jobject.
-   __ ld(value, Address(value, 0));
-   __ verify_oop(value);
+   __ ld(x10, Address(x10, 0));
+   __ verify_oop(x10);
    __ bind(done);
     // __ resolve_jobject(x10, xthread, t1);
   }
