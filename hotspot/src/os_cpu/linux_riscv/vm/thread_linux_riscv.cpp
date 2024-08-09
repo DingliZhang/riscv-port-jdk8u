@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
+// #include "memory/metaspaceShared.hpp"
 #include "runtime/thread.inline.hpp"
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is
@@ -63,11 +63,11 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
       return false;
     }
 
-    if (MetaspaceShared::is_in_trampoline_frame(addr.pc())) {
-      // In the middle of a trampoline call. Bail out for safety.
-      // This happens rarely so shouldn't affect profiling.
-      return false;
-    }
+    // if (MetaspaceShared::is_in_trampoline_frame(addr.pc())) {
+    //   // In the middle of a trampoline call. Bail out for safety.
+    //   // This happens rarely so shouldn't affect profiling.
+    //   return false;
+    // }
 
     frame ret_frame(ret_sp, ret_fp, addr.pc());
     if (!ret_frame.safe_for_sender(this)) {
