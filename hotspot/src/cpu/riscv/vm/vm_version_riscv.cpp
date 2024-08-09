@@ -27,7 +27,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
-#include "utilities/formatBuffer.hpp"
+// #include "utilities/formatBuffer.hpp"
 // #include "utilities/macros.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
