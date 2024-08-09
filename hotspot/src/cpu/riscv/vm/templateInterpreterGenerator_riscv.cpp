@@ -993,10 +993,10 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // reset_last_Java_frame
   __ reset_last_Java_frame(true, true);
 
-  if (CheckJNICalls) {
-    // clear_pending_jni_exception_check
-    __ sd(zr, Address(xthread, JavaThread::pending_jni_exception_check_fn_offset()));
-  }
+  // if (CheckJNICalls) {
+  //   // clear_pending_jni_exception_check
+  //   __ sd(zr, Address(xthread, JavaThread::pending_jni_exception_check_fn_offset()));
+  // }
 
   // reset handle block
   __ ld(t, Address(xthread, JavaThread::active_handles_offset()));
