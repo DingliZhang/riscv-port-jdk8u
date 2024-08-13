@@ -220,7 +220,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void increment_mdp_data_at(Register mdp_in, Register reg, int constant,
                              bool decrement = false);
   void increment_mask_and_jump(Address counter_addr,
-                               int increment, Address mask,
+                               int increment, int mask,
                                Register tmp1, Register tmp2,
                                bool preloaded, Label* where);
 

@@ -331,7 +331,7 @@ void InterpreterGenerator::generate_counter_incr(
                   MethodCounters::invocation_counter_offset() +
                   InvocationCounter::counter_offset());
     __ get_method_counters(xmethod, t1, done);
-    const Address mask(t1, in_bytes(MethodCounters::invoke_mask_offset()));
+    // const Address mask(t1, in_bytes(MethodCounters::invoke_mask_offset()));
     __ increment_mask_and_jump(invocation_counter, increment, mask, t0, x11, false, overflow);
     __ bind(done);
   } else { // not TieredCompilation
