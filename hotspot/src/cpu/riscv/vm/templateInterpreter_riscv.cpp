@@ -321,7 +321,7 @@ void InterpreterGenerator::generate_counter_incr(
       // Increment counter in the MDO
       const Address mdo_invocation_counter(x10, in_bytes(MethodData::invocation_counter_offset()) +
                                                 in_bytes(InvocationCounter::counter_offset()));
-      const Address mask(x10, in_bytes(MethodData::invoke_mask_offset()));
+      // const Address mask(x10, in_bytes(MethodData::invoke_mask_offset()));
       __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, t0, t1, false, overflow);
       __ j(done);
     }
