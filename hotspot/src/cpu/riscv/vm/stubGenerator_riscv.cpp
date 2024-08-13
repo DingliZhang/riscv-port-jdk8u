@@ -28,7 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSetAssembler.hpp"
+// #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_riscv.hpp"
@@ -644,6 +644,121 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Generate code for an array write pre barrier
+  //
+  //     addr    -  starting address
+  //     count   -  element count
+  //     tmp     - scratch register
+  //
+  //     Destroy no registers except rscratch1 and rscratch2
+  //
+  void  gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
+    BarrierSet* bs = Universe::heap()->barrier_set();
+    switch (bs->kind()) {
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      // With G1, don't generate the call if we statically know that the target in uninitialized
+      if (!dest_uninitialized) {
+        __ push_call_clobbered_registers();
+        if (count == c_rarg0) {
+          if (addr == c_rarg1) {
+            // exactly backwards!!
+            __ mv(t0, c_rarg0);
+            __ mv(c_rarg0, c_rarg1);
+            __ mv(c_rarg1, t0);
+          } else {
+            __ mv(c_rarg1, count);
+            __ mv(c_rarg0, addr);
+          }
+        } else {
+          __ mv(c_rarg0, addr);
+          __ mv(c_rarg1, count);
+        }
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
+        __ pop_call_clobbered_registers();
+        break;
+      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableExtension:
+      case BarrierSet::ModRef:
+        break;
+      default:
+        ShouldNotReachHere();
+
+      }
+    }
+  }
+
+ //
+  // Generate code for an array write post barrier
+  //
+  //  Input:
+  //     start    - register containing starting address of destination array
+  //     end      - register containing ending address of destination array
+  //     tmp  - scratch register
+  //
+  //  The input registers are overwritten.
+  //  The ending address is inclusive.
+  void gen_write_ref_array_post_barrier(Register start, Register end, Register tmp) {
+    assert_different_registers(start, end, tmp);
+    Label L_done;
+
+    // "end" is inclusive end pointer == start + (count - 1) * array_element_size
+    // If count == 0, "end" is less than "start" and we need to skip card marking.
+    // __ cmp(end, start);
+    // __ br(__ LO, L_done);
+    __ blt(end, start, L_done);  //TODO-RISCV64, not sure
+
+    BarrierSet* bs = Universe::heap()->barrier_set();
+    switch (bs->kind()) {
+      case BarrierSet::G1SATBCT:
+      case BarrierSet::G1SATBCTLogging:
+
+        {
+          __ push_call_clobbered_registers();
+          // must compute element count unless barrier set interface is changed (other platforms supply count)
+          assert_different_registers(start, end, tmp);
+          __ la(tmp, Address(end, BytesPerHeapOop));
+          __ sub(tmp, tmp, start);               // subtract start to get #bytes
+          __ srli(tmp, tmp, LogBytesPerHeapOop);  // convert to element count
+          __ mv(c_rarg0, start);
+          __ mv(c_rarg1, tmp);
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
+          __ pop_call_clobbered_registers();
+        }
+        break;
+      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableExtension:
+        {
+          CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+
+          Label L_loop;
+
+           __ srli(start, start, CardTableModRefBS::card_shift);
+           __ srli(end, end, CardTableModRefBS::card_shift);
+           __ sub(end, end, start); // number of bytes to copy
+
+          const Register count = end; // 'end' register contains bytes count now
+          __ load_byte_map_base(tmp);
+          __ add(start, start, tmp);
+          if (UseConcMarkSweepGC) {
+            __ membar(__ StoreStore);
+          }
+          __ bind(L_loop);
+          __ add(tmp, start, count);
+          __ sb(zr, Address(tmp));
+          __ sub(count, count, 1);
+          __ bgez(count, L_loop);
+          __ bind(L_done);
+        }
+        break;
+      default:
+        ShouldNotReachHere();
+
+    }
+    __ bind(L_done);
+  }
+
   // The inner part of zero_words().
   //
   // Inputs:
@@ -1092,32 +1207,39 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
-    if (dest_uninitialized) {
-      decorators |= IS_DEST_UNINITIALIZED;
-    }
-    if (aligned) {
-      decorators |= ARRAYCOPY_ALIGNED;
-    }
+    // DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
+    // if (dest_uninitialized) {
+    //   decorators |= IS_DEST_UNINITIALIZED;
+    // }
+    // if (aligned) {
+    //   decorators |= ARRAYCOPY_ALIGNED;
+    // }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
-    bs->arraycopy_prologue(_masm, decorators, is_oop, s, d, count, saved_reg);
+    // BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    // bs->arraycopy_prologue(_masm, decorators, is_oop, s, d, count, saved_reg);
 
     if (is_oop) {
       // save regs before copy_memory
       __ push_reg(RegSet::of(d, count), sp);
+      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized);
     }
 
     copy_memory(aligned, s, d, count, t0, size);
-
     if (is_oop) {
       __ pop_reg(RegSet::of(d, count), sp);
       if (VerifyOops) {
         verify_oop_array(size, d, count, t2);
+        __ sub(count, count, 1); // make an inclusive end pointer
+        // __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));  TODO-RISCV64, imitate from verify_oop_array in src/hotspot/cpu/aarch64/stubGenerator_aarch64.cpp
+        // __ slli(t1, count, exact_log2(size));
+        // __ add(t1, d, t1)
+        // __ la(count, Address(t1, 0));
+        __ shadd(count, count, d, t1, exact_log2(size));  //TODO-RISCV64, imitate from generate_generic_copy in src/hotspot/cpu/aarch64/stubGenerator_aarch64.cpp
+        gen_write_ref_array_post_barrier(d, count, t0);
       }
     }
 
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    // bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
 
     __ leave();
     __ mv(x10, zr); // return 0
@@ -1160,20 +1282,21 @@ class StubGenerator: public StubCodeGenerator {
     __ slli(t1, count, exact_log2(size));
     __ bgeu(t0, t1, nooverlap_target);
 
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
-    if (dest_uninitialized) {
-      decorators |= IS_DEST_UNINITIALIZED;
-    }
-    if (aligned) {
-      decorators |= ARRAYCOPY_ALIGNED;
-    }
+    // DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+    // if (dest_uninitialized) {
+    //   decorators |= IS_DEST_UNINITIALIZED;
+    // }
+    // if (aligned) {
+    //   decorators |= ARRAYCOPY_ALIGNED;
+    // }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
-    bs->arraycopy_prologue(_masm, decorators, is_oop, s, d, count, saved_regs);
+    // BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    // bs->arraycopy_prologue(_masm, decorators, is_oop, s, d, count, saved_regs);
 
     if (is_oop) {
       // save regs before copy_memory
       __ push_reg(RegSet::of(d, count), sp);
+      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized);
     }
 
     copy_memory(aligned, s, d, count, t0, -size);
@@ -1182,9 +1305,15 @@ class StubGenerator: public StubCodeGenerator {
       __ pop_reg(RegSet::of(d, count), sp);
       if (VerifyOops) {
         verify_oop_array(size, d, count, t2);
+        __ sub(count, count, 1); // make an inclusive end pointer
+        // __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));  TODO-RISCV64, imitate from verify_oop_array in src/hotspot/cpu/aarch64/stubGenerator_aarch64.cpp
+        // __ slli(t1, count, exact_log2(size));
+        // __ la(count, Address(d, t1));
+        __ shadd(count, count, d, t1, exact_log2(size));  //TODO-RISCV64, imitate from generate_generic_copy in src/hotspot/cpu/aarch64/stubGenerator_aarch64.cpp
+        gen_write_ref_array_post_barrier(d, count, t0);
       }
     }
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    // bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
     __ leave();
     __ mv(x10, zr); // return 0
     __ ret();
@@ -1505,14 +1634,15 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT;
-    bool is_oop = true;
-    if (dest_uninitialized) {
-      decorators |= IS_DEST_UNINITIALIZED;
-    }
+    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
+    // DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT;
+    // bool is_oop = true;
+    // if (dest_uninitialized) {
+    //   decorators |= IS_DEST_UNINITIALIZED;
+    // }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
-    bs->arraycopy_prologue(_masm, decorators, is_oop, from, to, count, wb_pre_saved_regs);
+    // BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    // bs->arraycopy_prologue(_masm, decorators, is_oop, from, to, count, wb_pre_saved_regs);
 
     // save the original count
     __ mv(count_save, count);
@@ -1558,7 +1688,9 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(count, L_done_pop);
 
     __ BIND(L_do_card_marks);
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0, wb_post_saved_regs);
+    // bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0, wb_post_saved_regs);
+    __ add(to, to, -heapOopSize);         // make an inclusive end pointer
+    gen_write_ref_array_post_barrier(start_to, to, t0);
 
     __ bind(L_done_pop);
     __ pop_reg(RegSet::of(x7, x9, x18, x19), sp);
