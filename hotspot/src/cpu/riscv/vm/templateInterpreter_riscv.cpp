@@ -207,8 +207,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 }
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
-                                                               int step,
-                                                               address continuation) {
+                                                               int step) {
   address entry = __ pc();
   __ restore_bcp();
   __ restore_locals();
@@ -241,11 +240,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     __ bind(L);
   }
 
-  if (continuation == NULL) {
-    __ dispatch_next(state, step);
-  } else {
-    __ jump_to_entry(continuation);
-  }
+  __ dispatch_next(state, step);
   return entry;
 }
 
