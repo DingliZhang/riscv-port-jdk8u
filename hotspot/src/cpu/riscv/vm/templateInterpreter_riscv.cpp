@@ -484,7 +484,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 //      x10
 //      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ...(param regs)
 //      t0, t1 (temporary regs)
-void TemplateInterpreterGenerator::lock_method() {
+void InterpreterGenerator::lock_method(void) {
   // synchronize method
   const Address access_flags(xmethod, Method::access_flags_offset());
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
