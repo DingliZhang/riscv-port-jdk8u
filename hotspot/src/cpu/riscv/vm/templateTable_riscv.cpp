@@ -460,7 +460,7 @@ void TemplateTable::sipush()
 void TemplateTable::ldc(bool wide)
 {
   transition(vtos, vtos);
-  Label call_ldc, notFloat, notClass, notInt, Done;
+  Label call_ldc, notFloat, notClass, Done;
 
   if (wide) {
    __ get_unsigned_2_byte_index_at_bcp(x11, 1);
@@ -510,18 +510,30 @@ void TemplateTable::ldc(bool wide)
   __ j(Done);
 
   __ bind(notFloat);
+#ifdef ASSERT
+  {
+    Label L;
+    // __ cmp(r3, JVM_CONSTANT_Integer);
+    // __ br(Assembler::EQ, L);
+    __ mv(t1, (u1)JVM_CONSTANT_Integer);
+    __ beq(x13 , t1, L);
+    // String and Object are rewritten to fast_aldc
+    `("unexpected tag type in ldc");
+    __ bind(L);
+  }
+#endif
+  // itos JVM_CONSTANT_Integer only
+  // __ mv(t1, (u1)JVM_CONSTANT_Integer);
+  // __ bne(x13, t1, notInt);
 
-  __ mv(t1, (u1)JVM_CONSTANT_Integer);
-  __ bne(x13, t1, notInt);
-
-  // itos
+  // // itos
   __ shadd(x11, x11, x12, x11, 3);
   __ lw(x10, Address(x11, base_offset));
   __ push_i(x10);
-  __ j(Done);
+  // __ j(Done);
 
-  __ bind(notInt);
-  condy_helper(Done);
+  // __ bind(notInt);
+  // condy_helper(Done);
 
   __ bind(Done);
 }
@@ -533,8 +545,7 @@ void TemplateTable::fast_aldc(bool wide)
 
   const Register result = x10;
   const Register tmp = x11;
-  const Register rarg = x12;
-
+  // const Register rarg = x12;
   const int index_size = wide ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
@@ -549,24 +560,26 @@ void TemplateTable::fast_aldc(bool wide)
   const address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
 
   // first time invocation - must resolve first
-  __ mv(rarg, (int)bytecode());
-  __ call_VM(result, entry, rarg);
+  // __ mv(rarg, (int)bytecode());
+  // __ call_VM(result, entry, rarg);
+  __ mv(tmp, (int)bytecode());
+  __ call_VM(result, entry, tmp);
 
   __ bind(resolved);
 
-  { // Check for the null sentinel.
-    // If we just called the VM, it already did the mapping for us,
-    // but it's harmless to retry.
-    Label notNull;
+  // { // Check for the null sentinel.
+  //   // If we just called the VM, it already did the mapping for us,
+  //   // but it's harmless to retry.
+  //   Label notNull;
 
-    // Stash null_sentinel address to get its value later
-    int32_t offset = 0;
-    __ movptr_with_offset(rarg, Universe::the_null_sentinel_addr(), offset);
-    __ ld(tmp, Address(rarg, offset));
-    __ bne(result, tmp, notNull);
-    __ mv(result, zr);  // NULL object reference
-    __ bind(notNull);
-  }
+  //   // Stash null_sentinel address to get its value later
+  //   int32_t offset = 0;
+  //   __ movptr_with_offset(rarg, Universe::the_null_sentinel_addr(), offset);
+  //   __ ld(tmp, Address(rarg, offset));
+  //   __ bne(result, tmp, notNull);
+  //   __ mv(result, zr);  // NULL object reference
+  //   __ bind(notNull);
+  // }
 
   if (VerifyOops) {
     // Safe to call with 0 result
@@ -577,7 +590,8 @@ void TemplateTable::fast_aldc(bool wide)
 void TemplateTable::ldc2_w()
 {
     transition(vtos, vtos);
-    Label notDouble, notLong, Done;
+    // Label notDouble, notLong, Done;
+    Label Long, Done;
     __ get_unsigned_2_byte_index_at_bcp(x10, 1);
 
     __ get_cpool_and_tags(x11, x12);
@@ -588,7 +602,9 @@ void TemplateTable::ldc2_w()
     __ add(x12, x12, x10);
     __ load_unsigned_byte(x12, Address(x12, tags_offset));
     __ mv(t1, JVM_CONSTANT_Double);
-    __ bne(x12, t1, notDouble);
+    // __ bne(x12, t1, notDouble);
+    __ bne(x12, t1, Long);
+
 
     // dtos
     __ shadd(x12, x10, x11, x12, 3);
@@ -596,130 +612,131 @@ void TemplateTable::ldc2_w()
     __ push_d(f10);
     __ j(Done);
 
-    __ bind(notDouble);
-    __ mv(t1, (int)JVM_CONSTANT_Long);
-    __ bne(x12, t1, notLong);
+    // __ bind(notDouble);
+    __ bind(Long);
+    // __ mv(t1, (int)JVM_CONSTANT_Long);
+    // __ bne(x12, t1, notLong);
 
     // ltos
     __ shadd(x10, x10, x11, x10, 3);
     __ ld(x10, Address(x10, base_offset));
     __ push_l(x10);
-    __ j(Done);
+    // __ j(Done);
 
-    __ bind(notLong);
-    condy_helper(Done);
-    __ bind(Done);
+    // __ bind(notLong);
+    // condy_helper(Done);
+    // __ bind(Done);
 }
 
-void TemplateTable::condy_helper(Label& Done)
-{
-  const Register obj = x10;
-  const Register rarg = x11;
-  const Register flags = x12;
-  const Register off = x13;
+// void TemplateTable::condy_helper(Label& Done)
+// {
+//   const Register obj = x10;
+//   const Register rarg = x11;
+//   const Register flags = x12;
+//   const Register off = x13;
 
-  const address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
+//   const address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
 
-  __ mv(rarg, (int) bytecode());
-  __ call_VM(obj, entry, rarg);
+//   __ mv(rarg, (int) bytecode());
+//   __ call_VM(obj, entry, rarg);
 
-  __ get_vm_result_2(flags, xthread);
+//   __ get_vm_result_2(flags, xthread);
 
-  // VMr = obj = base address to find primitive value to push
-  // VMr2 = flags = (tos, off) using format of CPCE::_flags
-  __ mv(off, flags);
-  __ mv(t0, ConstantPoolCacheEntry::field_index_mask);
-  __ andrw(off, off, t0);
+//   // VMr = obj = base address to find primitive value to push
+//   // VMr2 = flags = (tos, off) using format of CPCE::_flags
+//   __ mv(off, flags);
+//   __ mv(t0, ConstantPoolCacheEntry::field_index_mask);
+//   __ andrw(off, off, t0);
 
-  __ add(off, obj, off);
-  const Address field(off, 0); // base + R---->base + offset
+//   __ add(off, obj, off);
+//   const Address field(off, 0); // base + R---->base + offset
 
-  __ slli(flags, flags, XLEN - (ConstantPoolCacheEntry::tos_state_shift + ConstantPoolCacheEntry::tos_state_bits));
-  __ srli(flags, flags, XLEN - ConstantPoolCacheEntry::tos_state_bits); // (1 << 5) - 4 --> 28~31==> flags:0~3
+//   __ slli(flags, flags, XLEN - (ConstantPoolCacheEntry::tos_state_shift + ConstantPoolCacheEntry::tos_state_bits));
+//   __ srli(flags, flags, XLEN - ConstantPoolCacheEntry::tos_state_bits); // (1 << 5) - 4 --> 28~31==> flags:0~3
 
-  switch (bytecode()) {
-    case Bytecodes::_ldc:   // fall through
-    case Bytecodes::_ldc_w: {
-      // tos in (itos, ftos, stos, btos, ctos, ztos)
-      Label notInt, notFloat, notShort, notByte, notChar, notBool;
-      __ mv(t1, itos);
-      __ bne(flags, t1, notInt);
-      // itos
-      __ lw(x10, field);
-      __ push(itos);
-      __ j(Done);
+//   switch (bytecode()) {
+//     case Bytecodes::_ldc:   // fall through
+//     case Bytecodes::_ldc_w: {
+//       // tos in (itos, ftos, stos, btos, ctos, ztos)
+//       Label notInt, notFloat, notShort, notByte, notChar, notBool;
+//       __ mv(t1, itos);
+//       __ bne(flags, t1, notInt);
+//       // itos
+//       __ lw(x10, field);
+//       __ push(itos);
+//       __ j(Done);
 
-      __ bind(notInt);
-      __ mv(t1, ftos);
-      __ bne(flags, t1, notFloat);
-      // ftos
-      __ load_float(field);
-      __ push(ftos);
-      __ j(Done);
+//       __ bind(notInt);
+//       __ mv(t1, ftos);
+//       __ bne(flags, t1, notFloat);
+//       // ftos
+//       __ load_float(field);
+//       __ push(ftos);
+//       __ j(Done);
 
-      __ bind(notFloat);
-      __ mv(t1, stos);
-      __ bne(flags, t1, notShort);
-      // stos
-      __ load_signed_short(x10, field);
-      __ push(stos);
-      __ j(Done);
+//       __ bind(notFloat);
+//       __ mv(t1, stos);
+//       __ bne(flags, t1, notShort);
+//       // stos
+//       __ load_signed_short(x10, field);
+//       __ push(stos);
+//       __ j(Done);
 
-      __ bind(notShort);
-      __ mv(t1, btos);
-      __ bne(flags, t1, notByte);
-      // btos
-      __ load_signed_byte(x10, field);
-      __ push(btos);
-      __ j(Done);
+//       __ bind(notShort);
+//       __ mv(t1, btos);
+//       __ bne(flags, t1, notByte);
+//       // btos
+//       __ load_signed_byte(x10, field);
+//       __ push(btos);
+//       __ j(Done);
 
-      __ bind(notByte);
-      __ mv(t1, ctos);
-      __ bne(flags, t1, notChar);
-      // ctos
-      __ load_unsigned_short(x10, field);
-      __ push(ctos);
-      __ j(Done);
+//       __ bind(notByte);
+//       __ mv(t1, ctos);
+//       __ bne(flags, t1, notChar);
+//       // ctos
+//       __ load_unsigned_short(x10, field);
+//       __ push(ctos);
+//       __ j(Done);
 
-      __ bind(notChar);
-      __ mv(t1, ztos);
-      __ bne(flags, t1, notBool);
-      // ztos
-      __ load_signed_byte(x10, field);
-      __ push(ztos);
-      __ j(Done);
+//       __ bind(notChar);
+//       __ mv(t1, ztos);
+//       __ bne(flags, t1, notBool);
+//       // ztos
+//       __ load_signed_byte(x10, field);
+//       __ push(ztos);
+//       __ j(Done);
 
-      __ bind(notBool);
-      break;
-    }
+//       __ bind(notBool);
+//       break;
+//     }
 
-    case Bytecodes::_ldc2_w: {
-      Label notLong, notDouble;
-      __ mv(t1, ltos);
-      __ bne(flags, t1, notLong);
-      // ltos
-      __ ld(x10, field);
-      __ push(ltos);
-      __ j(Done);
+//     case Bytecodes::_ldc2_w: {
+//       Label notLong, notDouble;
+//       __ mv(t1, ltos);
+//       __ bne(flags, t1, notLong);
+//       // ltos
+//       __ ld(x10, field);
+//       __ push(ltos);
+//       __ j(Done);
 
-      __ bind(notLong);
-      __ mv(t1, dtos);
-      __ bne(flags, t1, notDouble);
-      // dtos
-      __ load_double(field);
-      __ push(dtos);
-      __ j(Done);
+//       __ bind(notLong);
+//       __ mv(t1, dtos);
+//       __ bne(flags, t1, notDouble);
+//       // dtos
+//       __ load_double(field);
+//       __ push(dtos);
+//       __ j(Done);
 
-      __ bind(notDouble);
-      break;
-    }
+//       __ bind(notDouble);
+//       break;
+//     }
 
-    default:
-      ShouldNotReachHere();
-  }
+//     default:
+//       ShouldNotReachHere();
+//   }
 
-  __ stop("bad ldc/condy");
-}
+//   __ stop("bad ldc/condy");
+// }
 
 void TemplateTable::locals_index(Register reg, int offset)
 {

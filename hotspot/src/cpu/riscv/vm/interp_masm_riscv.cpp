@@ -291,8 +291,6 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // bs->load_at(this, IN_HEAP, T_OBJECT, result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, /*tmp_thread*/ noreg);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
-  // // The resulting oop is null if the reference is not yet resolved.
-  // // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
@@ -443,13 +441,13 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
   sd(val, Address(esp, Interpreter::expr_offset_in_bytes(n)));
 }
 
-void InterpreterMacroAssembler::load_float(Address src) {
-  flw(f10, src);
-}
+// void InterpreterMacroAssembler::load_float(Address src) {
+//   flw(f10, src);
+// }
 
-void InterpreterMacroAssembler::load_double(Address src) {
-  fld(f10, src);
-}
+// void InterpreterMacroAssembler::load_double(Address src) {
+//   fld(f10, src);
+// }
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
