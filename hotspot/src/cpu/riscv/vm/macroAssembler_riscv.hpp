@@ -73,6 +73,8 @@ class MacroAssembler: public Assembler {
   // Place a fence.i after code may have been modified due to a safepoint.
   void safepoint_ifence();
 
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
+
   // Alignment
   void align(int modulus, int extra_offset = 0);
 
