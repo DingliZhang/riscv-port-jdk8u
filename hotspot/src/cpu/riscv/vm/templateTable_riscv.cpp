@@ -151,7 +151,7 @@ switch (barrier) {
       {
         // flatten object address if needed
         if (obj.index() == noreg && obj.offset() == 0) {
-          if (obj.base() != r3) {
+          if (obj.base() != x13) {
             __ mv(x13, obj.base());
           }
         } else {
