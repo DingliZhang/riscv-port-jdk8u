@@ -386,7 +386,7 @@ void InterpreterGenerator::generate_counter_incr(
   }
 }
 
-void InterpreterGenerator::generate_counter_overflow(Label& do_continue) {
+void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
   __ mv(c_rarg1, zr);
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), c_rarg1);
