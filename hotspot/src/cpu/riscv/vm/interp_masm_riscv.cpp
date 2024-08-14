@@ -1562,7 +1562,7 @@ void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
   sw(tmp1, counter_addr);
   // lwu(tmp2, mask);
   // andr(tmp1, tmp1, tmp2);
-  andr(tmp1, tmp1, mask);
+  andi(tmp1, tmp1, mask);  //TODO-RISCV64, not sure
   bnez(tmp1, done);
   j(*where); // offset is too large so we have to use j instead of beqz here
   bind(done);
