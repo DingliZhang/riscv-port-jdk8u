@@ -705,13 +705,6 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  */
 address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32_updateBytes_entry
-  // __ safepoint_poll(slow_path);
-  ExternalAddress state(SafepointSynchronize::address_of_state());
-  int32_t offset = 0;
-  __ la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
-  __ lwu(t0, Address(t0, offset));
-  assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
-  __ bnez(t0, slow_path);
   return 0;
 }
 
