@@ -690,19 +690,11 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
 /**
  * Method entry for static native methods:
- *   int java.util.zip.CRC32.update(int crc, int b)
+ *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 address InterpreterGenerator::generate_CRC32_update_entry() {
-  // TODO: Unimplemented generate_CRC32_update_entry
-  Label slow_path;
-  // If we need a safepoint check, generate full interpreter entry.
-  //  __ safepoint_poll(slow_path);
-  ExternalAddress state(SafepointSynchronize::address_of_state());
-  int32_t offset = 0;
-  __ la_patchable(t0, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
-  __ lwu(t0, Address(t0, offset));
-  assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
-  __ bnez(t0, slow_path);
+  // TODO: Unimplemented generate_CRC32_updateBytes_entry
   return 0;
 }
 
