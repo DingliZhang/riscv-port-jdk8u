@@ -2221,7 +2221,7 @@ void TemplateTable::ret() {
   __ ld(xbcp, Address(xmethod, Method::const_offset()));
   __ add(xbcp, xbcp, x11);
   __ addi(xbcp, xbcp, in_bytes(ConstMethod::codes_offset()));
-  __ dispatch_next(vtos, 0, /*generate_poll*/true);
+  __ dispatch_next(vtos);
 }
 
 void TemplateTable::wide_ret() {
@@ -2232,7 +2232,7 @@ void TemplateTable::wide_ret() {
   __ ld(xbcp, Address(xmethod, Method::const_offset()));
   __ add(xbcp, xbcp, x11);
   __ add(xbcp, xbcp, in_bytes(ConstMethod::codes_offset()));
-  __ dispatch_next(vtos, 0, /*generate_poll*/true);
+  __ dispatch_next(vtos);
 }
 
 void TemplateTable::tableswitch() {
