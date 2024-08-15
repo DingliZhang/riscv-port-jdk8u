@@ -948,7 +948,7 @@ void TemplateTable::faload()
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_FLOAT) >> 2);
   __ shadd(x10, x11, x10, t0, 2);
   // __ access_load_at(T_FLOAT, IN_HEAP | IS_ARRAY, x10, Address(x10), noreg, noreg);
-  __ flw(x10, Address(x10,  arrayOopDesc::base_offset_in_bytes(T_FLOAT)));
+  __ flw(f10, Address(x10,  arrayOopDesc::base_offset_in_bytes(T_FLOAT)));
 }
 
 void TemplateTable::daload()
@@ -962,7 +962,7 @@ void TemplateTable::daload()
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_DOUBLE) >> 3);
   __ shadd(x10, x11, x10, t0, 3);
   // __ access_load_at(T_DOUBLE, IN_HEAP | IS_ARRAY, x10, Address(x10), noreg, noreg);
-  __ fld(x10, Address(x10,  arrayOopDesc::base_offset_in_bytes(T_DOUBLE)));
+  __ fld(f10, Address(x10,  arrayOopDesc::base_offset_in_bytes(T_DOUBLE)));
 }
 
 void TemplateTable::aaload()
@@ -1242,7 +1242,7 @@ void TemplateTable::lastore() {
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_LONG) >> 3);
   __ shadd(t0, x11, x13, t0, 3);
   // __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg);
-  __ str(x10, Address(t0,
+  __ sd(x10, Address(t0,
                       arrayOopDesc::base_offset_in_bytes(T_LONG)));
 }
 
