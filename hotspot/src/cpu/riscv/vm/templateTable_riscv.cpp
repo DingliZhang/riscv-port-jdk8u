@@ -2068,11 +2068,15 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
       // x12: temporary
       __ beqz(x10, dispatch);     // test result -- no osr if null
       // nmethod may have been invalidated (VM may block upon call_VM return)
-      __ lbu(x12, Address(x10, nmethod::state_offset()));
-      if (nmethod::in_use != 0) {
-        __ sub(x12, x12, nmethod::in_use);
-      }
-      __ bnez(x12, dispatch);
+      // __ lbu(x12, Address(x10, nmethod::state_offset()));
+      // if (nmethod::in_use != 0) {
+      //   __ sub(x12, x12, nmethod::in_use);
+      // }
+      // __ bnez(x12, dispatch);
+      //TODO-RISCV64, imitate from generate_compare_long_string_different_encoding in src/hotspot/cpu/riscv/stubGenerator_riscv.cpp
+      __ lbu(x12, Address(x10, nmethod::entry_bci_offset()));
+      __ addi(t0, x12, -InvalidOSREntryBci);
+      __ beqz(t0, dispatch);
 
       // We have the address of an on stack replacement routine in x10
       // We need to prepare to execute the OSR method. First we must
