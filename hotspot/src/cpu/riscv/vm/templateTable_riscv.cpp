@@ -2520,7 +2520,31 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   __ mv(t0, (int) bytecode());
   __ beq(temp, t0, resolved);
 
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  // address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  address entry;
+  switch (bytecode()) {
+  case Bytecodes::_getstatic:
+  case Bytecodes::_putstatic:
+  case Bytecodes::_getfield:
+  case Bytecodes::_putfield:
+    entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_get_put);
+    break;
+  case Bytecodes::_invokevirtual:
+  case Bytecodes::_invokespecial:
+  case Bytecodes::_invokestatic:
+  case Bytecodes::_invokeinterface:
+    entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);
+    break;
+  case Bytecodes::_invokehandle:
+    entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokehandle);
+    break;
+  case Bytecodes::_invokedynamic:
+    entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic);
+    break;
+  default:
+    fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(bytecode())));
+    break;
+  }
   // __ mv(temp, (int) code);
   __ mv(temp, (int) bytecode());
   __ call_VM(noreg, entry, temp);
