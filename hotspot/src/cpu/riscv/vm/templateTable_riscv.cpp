@@ -3789,6 +3789,7 @@ void TemplateTable::_new() {
   Label done;
   Label initialize_header;
   Label initialize_object; // including clearing the fields
+  Label allocate_shared;
 
   __ get_cpool_and_tags(x14, x10);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3819,22 +3820,17 @@ void TemplateTable::_new() {
   __ andi(t0, x13, Klass::_lh_instance_slow_path_bit);
   __ bnez(t0, slow_case);
 
-  // Allocate the instance:
-  //  If TLAB is enabled:
-  //    Try to allocate in the TLAB.
-  //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
-  //    Initialize the allocation.
-  //    Exit.
-  //  Go to slow path.
+  // Allocate the instance
+  // 1) Try to allocate in the TLAB
+  // 2) if fail and the object is large allocate in the shared Eden
+  // 3) if the above fails (or is not applicable), go to a slow case
+  // (creates a new TLAB, etc.)
+
   const bool allow_shared_alloc = Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
-    __ tlab_allocate(x10, x13, 0, noreg, x11, slow_case);
+    __ tlab_allocate(x10, x13, 0, noreg, x11, 
+                     allow_shared_alloc ? allocate_shared : slow_case);
 
     if (ZeroTLAB) {
       // the fields have been already cleared
@@ -3848,14 +3844,14 @@ void TemplateTable::_new() {
     //
     // x13: instance size in bytes
     if (allow_shared_alloc) {
-      // __ eden_allocate(x10, x13, 0, x28, slow_case);
-      __ incr_allocated_bytes(x10, x13, 0, x28, slow_case);
+      __ bind(allocate_shared);
+
+      __ eden_allocate(x10, x13, 0, x28, slow_case);
+      __ incr_allocated_bytes(x10, x13, 0, x28);
     }
   }
 
-  // If USETLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialized need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
+  if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
     // The object is initialized before the header. If the object size is
     // zero, go directly to the header initialization.
     __ bind(initialize_object);
