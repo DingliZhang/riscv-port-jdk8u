@@ -84,11 +84,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-  if (UseCRC32CIntrinsics) {
-    warning("CRC32C intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
   if (UseRVV) {
     if (!(_cpuFeatures & CPU_V)) {
       warning("RVV is not supported on this CPU");
