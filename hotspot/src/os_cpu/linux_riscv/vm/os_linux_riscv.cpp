@@ -74,6 +74,7 @@
 # include <pwd.h>
 # include <ucontext.h>
 # include <unistd.h>
+#include <asm-generic/int-ll64.h>
 
 #define REG_FP       8
 
