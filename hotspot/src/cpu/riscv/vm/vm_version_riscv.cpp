@@ -33,7 +33,8 @@
 # include "os_linux.inline.hpp"
 #endif
 
-#include OS_HEADER_INLINE(os)
+#include <sys/auxv.h>
+#include <asm/hwcap.h>
 
 const char* VM_Version::_uarch = "";
 uint32_t VM_Version::_initial_vector_length = 0;
