@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "asm/register.hpp"
 #include "runtime/os.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
 #include <asm/hwcap.h>
