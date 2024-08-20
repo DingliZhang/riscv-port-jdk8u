@@ -2903,7 +2903,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
   }
 }
 
-void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
+void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   transition(vtos, vtos);
 
   const Register cache = x12;
