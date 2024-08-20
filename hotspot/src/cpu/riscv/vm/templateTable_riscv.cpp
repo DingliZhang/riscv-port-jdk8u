@@ -2840,10 +2840,6 @@ void TemplateTable::getfield(int byte_no)
   getfield_or_static(byte_no, false);
 }
 
-void TemplateTable::nofast_getfield(int byte_no) {
-  getfield_or_static(byte_no, false, may_not_rewrite);
-}
-
 void TemplateTable::getstatic(int byte_no)
 {
   getfield_or_static(byte_no, true);
