@@ -49,27 +49,19 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 #endif
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
-  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
-  const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  const int aarch64_code_length = VtableStub::pd_code_size_limit(true);
+  VtableStub* s = new(aarch64_code_length) VtableStub(true, vtable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
 
-  // Count unused bytes in instruction sequences of variable size.
-  // We add them to the computed buffer size in order to avoid
-  // overflow in subsequently generated stubs.
-  address   start_pc = NULL;
-  int       slop_bytes = 0;
-  int       slop_delta = 0;
-
-  ResourceMark    rm;
-  CodeBuffer      cb(s->entry_point(), stub_code_length);
+  ResourceMark rm;
+  CodeBuffer cb(s->entry_point(), aarch64_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
   assert_cond(masm != NULL);
 
-#if (!defined(PRODUCT) && defined(COMPILER2))
+#ifndef PRODUCT
   if (CountCompiledCalls) {
     __ la(t2, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
     __ add_memory_int64(Address(t2), 1);
@@ -86,8 +78,6 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
-    start_pc = __ pc();
-
     // check offset vs vtable length
     // __ lwu(t0, Address(t2, Klass::vtable_length_offset()));
     __ lwu(t0, Address(t2, InstanceKlass::vtable_length_offset()));
@@ -96,26 +86,14 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     __ enter();
     __ mv(x12, vtable_index);
 
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), j_rarg0, x12);
-    const ptrdiff_t estimate = 256;
-    const ptrdiff_t codesize = __ pc() - start_pc;
-    slop_delta = estimate - codesize;  // call_VM varies in length, depending on data
-    slop_bytes += slop_delta;
-    assert(slop_delta >= 0, "vtable #%d: Code size estimate (%d) for DebugVtables too small, required: %d", vtable_index, (int)estimate, (int)codesize);
-
+    __ call_VM(noreg,
+                CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), j_rarg0, x12);
     __ leave();
     __ bind(L);
   }
 #endif // PRODUCT
 
-  start_pc = __ pc();
   __ lookup_virtual_method(t2, vtable_index, xmethod);
-  // lookup_virtual_method generates
-  // 4 instructions (maximum value encountered in normal case):li(lui + addiw) + add + ld
-  // 1 instruction (best case):ld * 1
-  slop_delta = 16 - (int)(__ pc() - start_pc);
-  slop_bytes += slop_delta;
-  assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -135,41 +113,43 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
   __ jr(t0);
 
-  masm->flush();
-  bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
+  __ flush();
 
+  if (PrintMiscellaneous && (WizardMode || Verbose)) {
+    tty->print_cr("vtable #%d at "PTR_FORMAT"[%d] left over: %d",
+                  vtable_index, p2i(s->entry_point()),
+                  (int)(s->code_end() - s->entry_point()),
+                  (int)(s->code_end() - __ pc()));
+  }
+  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+
+  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
+
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
-  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
-  const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  // Note well: pd_code_size_limit is the absolute minimum we can get
+  // away with.  If you add code here, bump the code stub size
+  // returned by pd_code_size_limit!
+  const int code_length = VtableStub::pd_code_size_limit(false);
+  VtableStub* s = new(code_length) VtableStub(false, itable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
-  // Count unused bytes in instruction sequences of variable size.
-  // We add them to the computed buffer size in order to avoid
-  // overflow in subsequently generated stubs.
-  address   start_pc = NULL;
-  int       slop_bytes = 0;
-  int       slop_delta = 0;
 
-  ResourceMark    rm;
-  CodeBuffer      cb(s->entry_point(), stub_code_length);
+  ResourceMark rm;
+  CodeBuffer cb(s->entry_point(), code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
   assert_cond(masm != NULL);
 
-#if (!defined(PRODUCT) && defined(COMPILER2))
+#ifndef PRODUCT
   if (CountCompiledCalls) {
     __ la(x18, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
     __ add_memory_int64(Address(x18), 1);
   }
 #endif
-
-  // get receiver (need to skip return address on top of stack)
-  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
   //  t2: CompiledICHolder
@@ -184,45 +164,37 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register temp_reg2          = x29;
   const Register icholder_reg       = t1;
 
-  Label L_no_such_interface;
-
   __ ld(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
   __ ld(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
 
-  start_pc = __ pc();
+  Label L_no_such_interface;
 
   // get receiver klass (also an implicit null-check)
+  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
   address npe_addr = __ pc();
   __ load_klass(recv_klass_reg, j_rarg0);
 
   // Receiver subtype check against REFC.
+  // Destroys recv_klass_reg value.
   __ lookup_interface_method(// inputs: rec. class, interface
                              recv_klass_reg, resolved_klass_reg, noreg,
                              // outputs:  scan temp. reg1, scan temp. reg2
-                             temp_reg2, temp_reg,
+                             recv_klass_reg, temp_reg,
                              L_no_such_interface,
                              /*return_method=*/false);
 
-  const ptrdiff_t typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
+  __ load_klass(recv_klass_reg, j_rarg0);   // restore recv_klass_reg
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              recv_klass_reg, holder_klass_reg, itable_index,
                              // outputs: method, scan temp. reg
                              xmethod, temp_reg,
                              L_no_such_interface);
 
-  const ptrdiff_t lookupSize = __ pc() - start_pc;
+  // method (xmethod): Method*
+  // j_rarg0: receiver
 
-  // Reduce "estimate" such that "padding" does not drop below 8.
-  const ptrdiff_t estimate = 256;
-  const ptrdiff_t codesize = typecheckSize + lookupSize;
-  slop_delta = (int)(estimate - codesize);
-  slop_bytes += slop_delta;
-  assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
-
-#ifdef ASSERT
+#ifndef PRODUCT
   if (DebugVtables) {
     Label L2;
     __ beqz(xmethod, L2);
@@ -231,7 +203,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
     __ stop("compiler entrypoint is null");
     __ bind(L2);
   }
-#endif // ASSERT
+#endif // PRODUCT
 
   // xmethod: Method*
   // j_rarg0: receiver
@@ -240,24 +212,30 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ jr(t0);
 
   __ bind(L_no_such_interface);
-  // // Handle IncompatibleClassChangeError in itable stubs.
-  // // More detailed error message.
-  // // We force resolving of the call site by jumping to the "handle
-  // // wrong method" stub, and so let the interpreter runtime do all the
-  // // dirty work.
-  // assert(SharedRuntime::get_handle_wrong_method_stub() != NULL, "check initialization order");
-  // __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
-  assert(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()) != NULL, "check initialization order");
   __ far_jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
 
-  masm->flush();
-  bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
+  __ flush();
 
+  if (PrintMiscellaneous && (WizardMode || Verbose)) {
+    tty->print_cr("itable #%d at "PTR_FORMAT"[%d] left over: %d",
+                  itable_index, p2i(s->entry_point()),
+                  (int)(s->code_end() - s->entry_point()),
+                  (int)(s->code_end() - __ pc()));
+  }
+  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+
+  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
-int VtableStub::pd_code_alignment() {
-  // RISCV cache line size is not an architected constant. We just align on word size.
-  const unsigned int icache_line_size = wordSize;
-  return icache_line_size;
+
+int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
+  if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) {
+    return 1000;
+  }
+  int size = is_vtable_stub ? 60 : 192; // Plain + safety
+  return size;
+
 }
+
+int VtableStub::pd_code_alignment() { return 4; }
