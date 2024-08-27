@@ -63,6 +63,8 @@
 #define HWCAP_ISA_B  (1 << ('B' - 'A'))
 #endif
 
+static int  _features;
+
 #define read_csr(csr)                                           \
 ({                                                              \
         register unsigned long __v;                             \
