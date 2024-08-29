@@ -2156,7 +2156,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   mv(t0, (int)G1SATBCardTableModRefBS::g1_young_card_val());
   beq(tmp2, t0, done);
 
-  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
+  assert((int)CardTableModRefBS::dirty_card_val() == 0, "must be 0");
 
   membar(MacroAssembler::StoreLoad);
 
