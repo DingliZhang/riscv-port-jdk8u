@@ -67,7 +67,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, SystemDictionary::WKID klass_id,
                                  const char* error_message) {
   assert_cond(_masm != NULL);
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
+  Klass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
   Klass* klass = SystemDictionary::well_known_klass(klass_id);
   Register temp = t1;
   Register temp2 = t0; // used by MacroAssembler::cmpptr
