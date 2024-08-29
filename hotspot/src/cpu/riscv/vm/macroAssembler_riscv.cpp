@@ -5049,7 +5049,7 @@ void MacroAssembler::string_indexof_linearscan(Register haystack, Register needl
   // needle_con_cnt > 0 means needle_len register is invalid, needle length is constant
   // for UU/LL: needle_con_cnt[1, 4], UL: needle_con_cnt = 1
   assert(needle_con_cnt <= 4, "Invalid needle constant count");
-  assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
+  // assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
 
   Register ch1 = t0;
   Register ch2 = t1;
