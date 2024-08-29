@@ -86,8 +86,6 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
                                                // robj ^ rcounter ^ rcounter == robj
                                                // robj is address dependent on rcounter.
 
-  // Both robj and t0 are clobbered by try_resolve_jobject_in_native.
-  assert_cond(bs != NULL);
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
   STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
   __ andi(robj, robj, ~JNIHandles::weak_tag_mask);
