@@ -2034,8 +2034,9 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
 
   // TODO-RISCV64 needed to be check
-  assert_cond(masm != NULL);
+#ifdef _LP64
   assert(thread == xthread, "must be");
+#endif // _LP64
 
   Label done;
   Label runtime;
