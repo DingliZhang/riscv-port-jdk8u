@@ -518,7 +518,7 @@ void TemplateTable::ldc(bool wide)
     __ mv(t1, (u1)JVM_CONSTANT_Integer);
     __ beq(x13 , t1, L);
     // String and Object are rewritten to fast_aldc
-    `("unexpected tag type in ldc");
+    __ stop("unexpected tag type in ldc");
     __ bind(L);
   }
 #endif
