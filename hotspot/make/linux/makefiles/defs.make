@@ -124,7 +124,7 @@ ifeq ($(ARCH), aarch64)
 endif
 
 # RISCV64
-ifeq ($(ARCH), riscv64)
+ifeq ($(ARCH), riscv)
   ARCH_DATA_MODEL  = 64
   MAKE_ARGS        += LP64=1
   PLATFORM         = linux-riscv64
