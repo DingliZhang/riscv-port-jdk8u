@@ -129,7 +129,7 @@ ifeq ($(ARCH), riscv64)
   MAKE_ARGS        += LP64=1
   PLATFORM         = linux-riscv64
   VM_PLATFORM      = linux_riscv64
-  HS_ARCH          = riscv
+  HS_ARCH          = riscv64
 endif
 
 # On 32 bit linux we build server and client, on 64 bit just server.
