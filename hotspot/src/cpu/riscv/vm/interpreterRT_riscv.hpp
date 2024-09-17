@@ -45,10 +45,6 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   void pass_double();
   void pass_object();
 
-  Register next_gpr();
-  FloatRegister next_fpr();
-  int next_stack_offset();
-
  public:
   // Creation
   SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
