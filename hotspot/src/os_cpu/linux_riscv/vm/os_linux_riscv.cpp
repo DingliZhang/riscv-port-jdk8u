@@ -87,6 +87,9 @@ char* os::non_memory_address_word() {
   return (char*) -1;
 }
 
+void os::initialize_thread(Thread *thr) {
+}
+
 address os::Linux::ucontext_get_pc(ucontext_t * uc) {
   return (address)uc->uc_mcontext.__gregs[REG_PC];
 }
