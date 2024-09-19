@@ -434,6 +434,9 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 
 size_t os::Linux::min_stack_allowed  = 64 * K;
 
+// amd64: pthread on amd64 is always in floating stack mode
+bool os::Linux::supports_variable_stack_size() {  return true; }
+
 // return default stack size for thr_type
 size_t os::Linux::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
