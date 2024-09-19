@@ -57,12 +57,6 @@
 
 #ifndef CC_INTERP
 
-//-----------------------------------------------------------------------------
-
-extern "C" void entry(CodeBuffer*);
-
-//-----------------------------------------------------------------------------
-
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   address entry = __ pc();
 
