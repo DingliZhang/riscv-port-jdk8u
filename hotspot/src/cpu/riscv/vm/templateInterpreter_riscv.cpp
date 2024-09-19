@@ -612,6 +612,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 //
 //
 
+// Call an accessor method (assuming it is resolved, otherwise drop
+// into vanilla (slow path) entry
+address InterpreterGenerator::generate_accessor_entry(void) {
+  return NULL;
+}
+
 // Method entry for java.lang.ref.Reference.get.
 address InterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
