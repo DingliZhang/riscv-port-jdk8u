@@ -590,7 +590,6 @@ void TemplateTable::fast_aldc(bool wide)
 void TemplateTable::ldc2_w()
 {
     transition(vtos, vtos);
-    // Label notDouble, notLong, Done;
     Label Long, Done;
     __ get_unsigned_2_byte_index_at_bcp(x10, 1);
 
@@ -612,20 +611,14 @@ void TemplateTable::ldc2_w()
     __ push_d(f10);
     __ j(Done);
 
-    // __ bind(notDouble);
     __ bind(Long);
-    // __ mv(t1, (int)JVM_CONSTANT_Long);
-    // __ bne(x12, t1, notLong);
 
     // ltos
     __ shadd(x10, x10, x11, x10, 3);
     __ ld(x10, Address(x10, base_offset));
     __ push_l(x10);
-    // __ j(Done);
 
-    // __ bind(notLong);
-    // condy_helper(Done);
-    // __ bind(Done);
+    __ bind(Done);
 }
 
 // void TemplateTable::condy_helper(Label& Done)
