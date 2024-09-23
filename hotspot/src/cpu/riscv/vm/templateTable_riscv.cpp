@@ -3799,6 +3799,7 @@ void TemplateTable::_new() {
 
   // get InstanceKlass
   // __ load_resolved_klass_at_offset(x14, x13, x14, t0);
+  __ shadd(x14, x14, x14, x13, 3);
   __ ld(x14, Address(x14, sizeof(ConstantPool)));  //TODO-RISCV64 revert by JDK-8171392, imitated from LIR_Assembler::type_profile_helper in c1_LIRAssembler_aarch64.cpp, needed to be check.
 
   // make sure klass is initialized & doesn't have finalizer
@@ -3832,26 +3833,26 @@ void TemplateTable::_new() {
       // initialize both the header and fields
       __ j(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // x13: instance size in bytes
-    if (allow_shared_alloc) {
-      __ bind(allocate_shared);
+  }
 
-      __ eden_allocate(x10, x13, 0, x28, slow_case);
-      __ incr_allocated_bytes(x10, x13, 0, x28);
-    }
+  // Allocation in the shared Eden, if allowed.
+  //
+  // x13: instance size in bytes
+  if (allow_shared_alloc) {
+    __ bind(allocate_shared);
+
+    __ eden_allocate(x10, x13, 0, x28, slow_case);
+    __ incr_allocated_bytes(x10, x13, 0, x28);
   }
 
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
-    // The object is initialized before the header. If the object size is
+    // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
     __ bind(initialize_object);
     __ sub(x13, x13, sizeof(oopDesc));
     __ beqz(x13, initialize_header);
 
-    // Initialize obejct fields
+    // Initialize object fields
     {
       __ add(x12, x10, sizeof(oopDesc));
       Label loop;
