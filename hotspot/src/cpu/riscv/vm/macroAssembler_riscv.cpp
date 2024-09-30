@@ -1859,6 +1859,8 @@ void MacroAssembler::store_check_part_2(Register obj) {
   if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       membar(StoreStore);
   }
+  add(obj, t0, obj);
+  const Address field(obj, 0);
   sb(zr, Address(obj));
 }
 
