@@ -4012,7 +4012,8 @@ void TemplateTable::instanceof() {
   __ bind(quicked);
   __ load_klass(x13, x10);
   // __ load_resolved_klass_at_offset(x12, x9, x10, t0);
-  __ ld(x10, Address(x10, sizeof(ConstantPool)));  //TODO-RISCV64 revert by JDK-8171392, imitated from LIR_Assembler::type_profile_helper in c1_LIRAssembler_aarch64.cpp, needed to be check.
+  __ shadd(x10, x9, x12, t0, 3);
+  __ ld(x10, Address(x10, sizeof(ConstantPool)));
 
   __ bind(resolved);
 
