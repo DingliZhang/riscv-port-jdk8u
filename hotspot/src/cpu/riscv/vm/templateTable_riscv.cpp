@@ -3800,8 +3800,8 @@ void TemplateTable::_new() {
 
   // get InstanceKlass
   // __ load_resolved_klass_at_offset(x14, x13, x14, t0);
-  __ shadd(x14, x14, x14, x13, 3);
-  __ ld(x14, Address(x14, sizeof(ConstantPool)));  //TODO-RISCV64 revert by JDK-8171392, imitated from LIR_Assembler::type_profile_helper in c1_LIRAssembler_aarch64.cpp, needed to be check.
+  __ shadd(x14, x13, x14, t0, 3);
+  __ ld(x14, Address(x14, sizeof(ConstantPool)));  //TODO-RISCV64 revert by JDK-8171392, imitated from LIR_Assembler::type_profile_helper in c1_LIRAssembler_aarch64.cpp, needed to be check. Should has been fixed by https://github.com/sendaoYan/riscv-port-jdk8u-ysd/issues/263.
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
@@ -3954,7 +3954,8 @@ void TemplateTable::checkcast()
   __ bind(quicked);
   __ mv(x13, x10); // Save object in x13; x10 needed for subtype check
   // __ load_resolved_klass_at_offset(x12, x9, x10, t0); // x10 = klass
-  __ ld(x10, Address(x10, sizeof(ConstantPool)));  //TODO-RISCV64 revert by JDK-8171392, imitated from LIR_Assembler::type_profile_helper in c1_LIRAssembler_aarch64.cpp, needed to be check.
+  __ shadd(x10, x9, x12, t0, 3);
+  __ ld(x10, Address(x10, sizeof(ConstantPool)));  //TODO-RISCV64 revert by JDK-8171392, imitated from LIR_Assembler::type_profile_helper in c1_LIRAssembler_aarch64.cpp, needed to be check. Should has been fixed by https://github.com/sendaoYan/riscv-port-jdk8u-ysd/issues/263.
 
   __ bind(resolved);
   __ load_klass(x9, x13);
