@@ -26,6 +26,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterGenerator.hpp"
@@ -53,7 +54,7 @@
 #include "oops/method.hpp"
 #endif // !PRODUCT
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 #ifndef CC_INTERP
 
@@ -1802,13 +1803,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t != NULL && t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ j(L);
-  fep = __ pc();  __ push_f();    __ j(L);
-  dep = __ pc();  __ push_d();    __ j(L);
-  lep = __ pc();  __ push_l();    __ j(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ j(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f();
+      __ j(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d();
+      __ j(L);
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ j(L);
+  bep = cep = sep = iep = __ pc();     // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();     // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }

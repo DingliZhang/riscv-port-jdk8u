@@ -26,6 +26,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 // #include "gc/shared/collectedHeap.hpp"
 // #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -44,7 +45,7 @@
 
 #ifndef CC_INTERP
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Platform-dependent initialization
 
