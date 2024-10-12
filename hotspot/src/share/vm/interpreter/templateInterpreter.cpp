@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -31,7 +30,7 @@
 
 #ifndef CC_INTERP
 
-#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
+# define __ _masm->
 
 void TemplateInterpreter::initialize() {
   if (_code != NULL) return;
