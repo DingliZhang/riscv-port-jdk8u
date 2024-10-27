@@ -3616,50 +3616,24 @@ void TemplateTable::invokeinterface(int byte_no) {
   // x12: receiver
   // x13: flags
 
-  // First check for Object case, then private interface method,
-  // then regular interface method.
-
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object. See cpCache.cpp for details
-  Label notObjectMethod;
-  __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_forced_virtual_shift);
-  __ beqz(t0, notObjectMethod);
+  // This code isn't produced by javac, but could be produced by
+  // another compliant java compiler.
+  Label notMethod;
+  __ test_bit(t0, x13, ConstantPoolCacheEntry::is_forced_virtual_shift);
+  __ beqz(t0, notMethod);
 
   invokevirtual_helper(xmethod, x12, x13);
-  __ bind(notObjectMethod);
-
-  Label no_such_interface;
-
-  // Check for private method invocation - indicated by vfinal
-  Label notVFinal;
-  __ andi(t0, x13, 1UL << ConstantPoolCacheEntry::is_vfinal_shift);
-  __ beqz(t0, notVFinal);
-
-  // Check receiver klass into x13 - also a null check
-  __ null_check(x12, oopDesc::klass_offset_in_bytes());
-  __ load_klass(x13, x12);
-
-  Label subtype;
-  __ check_klass_subtype(x13, x10, x14, subtype);
-  // If we get here the typecheck failed
-  __ j(no_such_interface);
-  __ bind(subtype);
-
-  __ profile_final_call(x10);
-  __ profile_arguments_type(x10, xmethod, x14, true);
-  __ jump_from_interpreted(xmethod);
-
-  __ bind(notVFinal);
+  __ bind(notMethod);
 
   // Get receiver klass into x13 - also a null check
   __ restore_locals();
   __ null_check(x12, oopDesc::klass_offset_in_bytes());
   __ load_klass(x13, x12);
 
-  Label no_such_method;
+  Label no_such_interface, no_such_method;
 
-  // // Preserve method for the throw_AbstractMethodErrorVerbose.
-  // __ mv(x28, xmethod);
   // Receiver subtype check against REFC.
   // Superklass in x10. Subklass in x13. Blows t1, x30
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
@@ -3680,10 +3654,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ subw(xmethod, xmethod, Method::itable_index_max);
   __ negw(xmethod, xmethod);
 
-  // // Preserve recvKlass for throw_AbstractMethodErrorVerbose
-  // __ mv(xlocals, x13);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             xlocals, x10, xmethod,
+                             x13, x10, xmethod,
                              // outputs: method, scan temp. reg
                              xmethod, x30,
                              no_such_interface);
@@ -3701,7 +3673,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // do the call
   // x12: receiver
   // xmethod: Method
-  __ jump_from_interpreted(xmethod);
+  __ jump_from_interpreted(xmethod, x13);
   __ should_not_reach_here();
 
   // exception handling code follows ...
@@ -3712,8 +3684,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   // throw exception
   __ restore_bcp();    // bcp must be correct for exception handler   (was destroyed)
   __ restore_locals(); // make sure locals pointer is correct as well (was destroyed)
-  // // Pass arguments for generating a verbose error message.
-  // __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose), x13, x28);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
@@ -3722,10 +3692,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // throw exceptiong
   __ restore_bcp();    // bcp must be correct for exception handler   (was destroyed)
   __ restore_locals(); // make sure locals pointer is correct as well (was destroyed)
-  // // Pass arguments for generating a verbose error message.
-  // __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-  //                                    InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose), x13, x10);
-   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                    InterpreterRuntime::throw_IncompatibleClassChangeError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();

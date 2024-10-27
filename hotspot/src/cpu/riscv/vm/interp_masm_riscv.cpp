@@ -452,6 +452,10 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
 
+void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register tmp) {
+  jump_from_interpreted(method);
+}
+
 // Jump to from_interpreted entry of a call unless single stepping is possible
 // in this thread in which case we must call the i2i entry
 void InterpreterMacroAssembler::jump_from_interpreted(Register method) {
