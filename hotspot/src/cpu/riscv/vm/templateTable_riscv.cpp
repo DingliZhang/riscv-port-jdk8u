@@ -967,12 +967,8 @@ void TemplateTable::aaload()
   // x10: array
   // x11: index
   index_check(x10, x11); // leaves index in x11
-  __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
-  __ shadd(x10, x11, x10, t0, LogBytesPerHeapOop);
-  // do_oop_load(_masm,
-  //             Address(x10),
-  //             x10,
-  //             IN_HEAP | IS_ARRAY);  //TODO-RISCV64: in aarch64 of revert JDK-8203353, IN_HEAP_ARRAY -> IN_HEAP | IN_HEAP_ARRAY
+  int s = (UseCompressedOops ? 2 : 3);
+  __ shadd(x11, x11, x10, t0, s);
   __ load_heap_oop(x10, Address(x11, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 }
 
